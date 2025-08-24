@@ -193,7 +193,9 @@ export default function Dashboard() {
 
   const handleEmbedDashboard = (dashboard: PowerBIDashboard) => {
     console.log("Expanding dashboard:", dashboard.name);
+    console.log("Current viewingDashboard:", viewingDashboard);
     setViewingDashboard(dashboard);
+    console.log("Set viewingDashboard to:", dashboard);
   };
 
   const handleDeleteDashboard = () => {
@@ -209,6 +211,205 @@ export default function Dashboard() {
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Kunne ikke indlæse dashboards</h2>
           <p className="text-gray-600">Der opstod en fejl ved indlæsning af data.</p>
         </div>
+      </div>
+    );
+  }
+
+  // If viewing a dashboard, show full screen view
+  if (viewingDashboard) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+        {/* Header with back button */}
+        <header className="bg-white/80 backdrop-blur-xl border-b border-gray-200/50 shadow-sm sticky top-0 z-40">
+          <div className="max-w-7xl mx-auto px-8 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setViewingDashboard(null)}
+                  className="text-gray-600 hover:text-gray-900"
+                  data-testid="button-back"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Tilbage til oversigt
+                </Button>
+                <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
+                  <Settings className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900" data-testid="dashboard-title">
+                    {viewingDashboard.name}
+                  </h1>
+                  {viewingDashboard.description && (
+                    <p className="text-sm text-gray-600">{viewingDashboard.description}</p>
+                  )}
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleEditDashboard(viewingDashboard)}
+                className="text-gray-600 hover:text-gray-900"
+                data-testid="button-edit-current"
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                Rediger
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        {/* Full screen Power BI embed */}
+        <main className="h-[calc(100vh-100px)]">
+          {viewingDashboard.url ? (
+            <iframe
+              src={viewingDashboard.url}
+              className="w-full h-full border-0"
+              allowFullScreen
+              title={viewingDashboard.name}
+              data-testid="powerbi-iframe-fullscreen"
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full bg-gray-50">
+              <div className="text-center">
+                <p className="text-gray-500 mb-4">Ingen URL tilgængelig for dette dashboard</p>
+                <Button
+                  onClick={() => handleEditDashboard(viewingDashboard)}
+                  className="bg-primary-600 hover:bg-primary-700"
+                >
+                  Tilføj URL
+                </Button>
+              </div>
+            </div>
+          )}
+        </main>
+
+        {/* Edit Dialog for full screen view */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-md" data-testid="edit-dialog">
+            <DialogHeader>
+              <DialogTitle className="text-gray-900">
+                Rediger Dashboard
+              </DialogTitle>
+            </DialogHeader>
+            <Form {...editForm}>
+              <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-6">
+                <FormField
+                  control={editForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-700">Navn</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Dashboard navn..." 
+                          {...field} 
+                          className="bg-white/50"
+                          data-testid="input-edit-name"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-700">Power BI URL</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="https://app.powerbi.com/..." 
+                          {...field}
+                          className="bg-white/50"
+                          data-testid="input-edit-url"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-700">Beskrivelse</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Beskriv hvad dette dashboard viser..." 
+                          {...field}
+                          value={field.value || ""}
+                          className="bg-white/50 min-h-[100px]"
+                          data-testid="input-edit-description"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-700">Kategori</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="bg-white/50" data-testid="select-edit-category">
+                            <SelectValue placeholder="Vælg kategori" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Økonomi">Økonomi</SelectItem>
+                          <SelectItem value="Beboeranalyse">Beboeranalyse</SelectItem>
+                          <SelectItem value="Vedligeholdelse">Vedligeholdelse</SelectItem>
+                          <SelectItem value="Ejendomme">Ejendomme</SelectItem>
+                          <SelectItem value="Bæredygtighed">Bæredygtighed</SelectItem>
+                          <SelectItem value="General">General</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex justify-between gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleDeleteDashboard}
+                    disabled={deleteDashboardMutation.isPending}
+                    className="text-red-600 border-red-200 hover:bg-red-50"
+                    data-testid="button-delete-dashboard"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {deleteDashboardMutation.isPending ? "Sletter..." : "Slet"}
+                  </Button>
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsEditDialogOpen(false)}
+                      data-testid="button-cancel-edit"
+                    >
+                      Annuller
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={updateDashboardMutation.isPending}
+                      className="bg-primary-600 hover:bg-primary-700"
+                      data-testid="button-save-edit"
+                    >
+                      {updateDashboardMutation.isPending ? "Gemmer..." : "Gem ændringer"}
+                    </Button>
+                  </div>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
