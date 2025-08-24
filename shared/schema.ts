@@ -9,12 +9,14 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
 });
 
-export const dashboardStats = pgTable("dashboard_stats", {
+export const powerBIDashboards = pgTable("power_bi_dashboards", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  totalUnits: integer("total_units").notNull().default(0),
-  occupancyRate: text("occupancy_rate").notNull().default("0%"),
-  monthlyRevenue: text("monthly_revenue").notNull().default("0 kr"),
-  activeCases: integer("active_cases").notNull().default(0),
+  name: text("name").notNull(),
+  url: text("url").notNull(),
+  description: text("description").default(null),
+  category: text("category").notNull().default("General"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  isActive: integer("is_active").notNull().default(1),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -22,14 +24,13 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
 });
 
-export const insertDashboardStatsSchema = createInsertSchema(dashboardStats).pick({
-  totalUnits: true,
-  occupancyRate: true,
-  monthlyRevenue: true,
-  activeCases: true,
+export const insertPowerBIDashboardSchema = createInsertSchema(powerBIDashboards).omit({
+  id: true,
+  createdAt: true,
+  isActive: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
-export type InsertDashboardStats = z.infer<typeof insertDashboardStatsSchema>;
-export type DashboardStats = typeof dashboardStats.$inferSelect;
+export type InsertPowerBIDashboard = z.infer<typeof insertPowerBIDashboardSchema>;
+export type PowerBIDashboard = typeof powerBIDashboards.$inferSelect;
