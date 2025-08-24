@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Download, Maximize2, ExternalLink } from "lucide-react";
+import { Download, ExternalLink, Trash2, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DashboardCardProps {
@@ -7,7 +7,9 @@ interface DashboardCardProps {
   children: ReactNode;
   showDownload?: boolean;
   showExpand?: boolean;
+  showDelete?: boolean;
   dashboardUrl?: string;
+  onDelete?: () => void;
   "data-testid"?: string;
 }
 
@@ -16,7 +18,9 @@ export default function DashboardCard({
   children, 
   showDownload = false, 
   showExpand = false,
+  showDelete = false,
   dashboardUrl,
+  onDelete,
   "data-testid": testId
 }: DashboardCardProps) {
   
@@ -35,7 +39,7 @@ export default function DashboardCard({
           {title}
         </h3>
         
-        {(showDownload || showExpand) && (
+        {(showDownload || showExpand || showDelete) && (
           <div className="flex space-x-2" data-testid="card-actions">
             {showDownload && (
               <Button
@@ -56,13 +60,24 @@ export default function DashboardCard({
                 data-testid="button-expand"
                 disabled={!dashboardUrl}
               >
-                {dashboardUrl ? <ExternalLink className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+            )}
+            {showDelete && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onDelete}
+                className="text-gray-400 hover:text-red-600 transition-colors"
+                data-testid="button-delete"
+              >
+                <Trash2 className="h-4 w-4" />
               </Button>
             )}
           </div>
         )}
         
-        {!showDownload && !showExpand && (
+        {!showDownload && !showExpand && !showDelete && (
           <Button
             variant="ghost"
             size="icon"
@@ -71,7 +86,7 @@ export default function DashboardCard({
             data-testid="button-expand-default"
             disabled={!dashboardUrl}
           >
-            {dashboardUrl ? <ExternalLink className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            <ExternalLink className="h-4 w-4" />
           </Button>
         )}
       </div>

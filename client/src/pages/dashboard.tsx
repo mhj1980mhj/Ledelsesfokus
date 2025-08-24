@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Settings, Plus, Calendar, ArrowUpDown, Clock } from "lucide-react";
+import { Search, Settings, Plus, Calendar, ArrowUpDown, Clock, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -12,7 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertPowerBIDashboardSchema } from "@shared/schema";
 import { z } from "zod";
 // import { apiRequest } from "@/lib/queryClient";
-import PowerBIEmbed from "@/components/power-bi-embed";
+// import PowerBIEmbed from "@/components/power-bi-embed";
 import DashboardCard from "@/components/dashboard-card";
 import { useToast } from "@/hooks/use-toast";
 
@@ -81,6 +81,31 @@ export default function Dashboard() {
         variant: "destructive"
       });
       console.error("Error creating dashboard:", error);
+    }
+  });
+
+  const deleteDashboardMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/dashboards/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete dashboard");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboards"] });
+      toast({
+        title: "Slettet!",
+        description: "Dashboard er fjernet med succes"
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Fejl",
+        description: "Kunne ikke slette dashboard. Prøv igen.",
+        variant: "destructive"
+      });
+      console.error("Error deleting dashboard:", error);
     }
   });
 
@@ -364,16 +389,18 @@ export default function Dashboard() {
                   key={dashboard.id}
                   title={dashboard.name}
                   showExpand
+                  showDelete
                   dashboardUrl={dashboard.url || undefined}
+                  onDelete={() => deleteDashboardMutation.mutate(dashboard.id)}
                   data-testid={`card-dashboard-${dashboard.id}`}
                 >
                   <div className="space-y-4">
                     {dashboard.description && (
-                      <p className="text-sm text-gray-600" data-testid="dashboard-description">
+                      <p className="text-sm text-gray-600 mb-4" data-testid="dashboard-description">
                         {dashboard.description}
                       </p>
                     )}
-                    <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
                       <span className="bg-primary-100 text-primary-700 px-2 py-1 rounded-full">
                         {dashboard.category}
                       </span>
@@ -382,13 +409,22 @@ export default function Dashboard() {
                         {new Date(dashboard.createdAt).toLocaleDateString("da-DK")}
                       </span>
                     </div>
-                    <PowerBIEmbed
-                      title={dashboard.name}
-                      subtitle={dashboard.description || "Indlæser dashboard..."}
-                      height="h-64"
-                      dashboardUrl={dashboard.url || undefined}
-                      data-testid={`embed-${dashboard.id}`}
-                    />
+                    {dashboard.url ? (
+                      <a
+                        href={dashboard.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block w-full p-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 text-center font-medium"
+                        data-testid={`link-${dashboard.id}`}
+                      >
+                        <ExternalLink className="inline mr-2 h-4 w-4" />
+                        Åbn {dashboard.name}
+                      </a>
+                    ) : (
+                      <div className="w-full p-4 bg-gray-100 text-gray-500 rounded-xl text-center">
+                        <span className="text-sm">URL mangler - klik tandhjulet for at opdatere</span>
+                      </div>
+                    )}
                   </div>
                 </DashboardCard>
               ))}
