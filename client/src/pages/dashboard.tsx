@@ -812,16 +812,14 @@ export default function Dashboard() {
                       </span>
                     </div>
                     {dashboard.url ? (
-                      <a
-                        href={dashboard.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        onClick={() => handleEmbedDashboard(dashboard)}
                         className="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 font-medium h-10"
                         data-testid={`link-${dashboard.id}`}
                       >
                         <ExternalLink className="mr-2 h-4 w-4" />
                         Åbn {dashboard.name}
-                      </a>
+                      </button>
                     ) : (
                       <div className="inline-flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-500 rounded-lg h-10">
                         <span className="text-sm">URL mangler - klik tandhjulet for at opdatere</span>

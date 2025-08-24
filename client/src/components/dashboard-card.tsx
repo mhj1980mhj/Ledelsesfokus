@@ -57,7 +57,7 @@ export default function DashboardCard({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleMaximize}
+                onClick={() => dashboardUrl && window.open(dashboardUrl, '_blank')}
                 className="text-gray-400 hover:text-gray-600 transition-colors h-8 w-8 p-0"
                 data-testid="button-expand"
                 disabled={!dashboardUrl}
