@@ -436,7 +436,7 @@ export default function Dashboard() {
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button 
-                  className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-4 py-2 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300 h-10"
+                  className="bg-[#9c9387] hover:bg-[#8a816d] text-white px-4 py-2 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300 h-10"
                   data-testid="button-settings"
                 >
                   <Settings className="mr-2 h-4 w-4" />
@@ -542,7 +542,7 @@ export default function Dashboard() {
                       <Button 
                         type="submit" 
                         disabled={createDashboardMutation.isPending}
-                        className="bg-gradient-to-r from-primary-500 to-primary-600 text-white h-10"
+                        className="bg-[#9c9387] hover:bg-[#8a816d] text-white h-10"
                         data-testid="button-save"
                       >
                         {createDashboardMutation.isPending ? (
@@ -677,7 +677,7 @@ export default function Dashboard() {
                         <Button
                           type="submit"
                           disabled={updateDashboardMutation.isPending}
-                          className="bg-primary-600 hover:bg-primary-700"
+                          className="bg-[#9c9387] hover:bg-[#8a816d] text-white h-10"
                           data-testid="button-save-edit"
                         >
                           {updateDashboardMutation.isPending ? "Gemmer..." : "Gem ændringer"}
@@ -711,7 +711,7 @@ export default function Dashboard() {
                   variant={sortBy === "latest" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSortBy("latest")}
-                  className={sortBy === "latest" ? "glossy-btn" : ""}
+                  className={sortBy === "latest" ? "bg-[#9c9387] hover:bg-[#8a816d] text-white" : ""}
                   data-testid="button-sort-latest"
                 >
                   <Clock className="mr-2 h-3 w-3" />
@@ -721,7 +721,7 @@ export default function Dashboard() {
                   variant={sortBy === "alphabetical" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSortBy("alphabetical")}
-                  className={sortBy === "alphabetical" ? "glossy-btn" : ""}
+                  className={sortBy === "alphabetical" ? "bg-[#9c9387] hover:bg-[#8a816d] text-white" : ""}
                   data-testid="button-sort-alphabetical"
                 >
                   <ArrowUpDown className="mr-2 h-3 w-3" />
@@ -761,7 +761,7 @@ export default function Dashboard() {
             {!searchQuery && (
               <Button 
                 onClick={() => setIsAddDialogOpen(true)}
-                className="glossy-btn"
+                className="bg-[#9c9387] hover:bg-[#8a816d] text-white"
                 data-testid="button-add-first"
               >
                 <Plus className="mr-2 h-4 w-4" />
@@ -813,7 +813,7 @@ export default function Dashboard() {
                     {dashboard.url ? (
                       <button
                         onClick={() => handleEmbedDashboard(dashboard)}
-                        className="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 font-medium h-10"
+                        className="inline-flex items-center justify-center px-4 py-2 bg-[#9c9387] hover:bg-[#8a816d] text-white rounded-lg hover:shadow-lg transition-all duration-300 font-medium h-10"
                         data-testid={`link-${dashboard.id}`}
                       >
                         <ExternalLink className="mr-2 h-4 w-4" />
