@@ -56,24 +56,24 @@ export default function DashboardCard({
             {showExpand && (
               <Button
                 variant="ghost"
-                size="icon"
+                size="sm"
                 onClick={handleMaximize}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 hover:text-gray-600 transition-colors h-8 w-8 p-0"
                 data-testid="button-expand"
                 disabled={!dashboardUrl}
               >
-                <ExternalLink className="h-4 w-4" />
+                <ExternalLink className="h-3 w-3" />
               </Button>
             )}
             {showSettings && (
               <Button
                 variant="ghost"
-                size="icon"
+                size="sm"
                 onClick={onSettings}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 hover:text-gray-600 transition-colors h-8 w-8 p-0"
                 data-testid="button-settings"
               >
-                <Settings className="h-4 w-4" />
+                <Settings className="h-3 w-3" />
               </Button>
             )}
           </div>

@@ -399,7 +399,7 @@ export default function Dashboard() {
                     <Button
                       type="submit"
                       disabled={updateDashboardMutation.isPending}
-                      className="bg-primary-600 hover:bg-primary-700"
+                      className="bg-gradient-to-r from-primary-500 to-primary-600 text-white h-10"
                       data-testid="button-save-edit"
                     >
                       {updateDashboardMutation.isPending ? "Gemmer..." : "Gem ændringer"}
@@ -437,7 +437,7 @@ export default function Dashboard() {
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button 
-                  className="glossy-btn text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-4 py-2 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300 h-10"
                   data-testid="button-settings"
                 >
                   <Settings className="mr-2 h-4 w-4" />
@@ -543,7 +543,7 @@ export default function Dashboard() {
                       <Button 
                         type="submit" 
                         disabled={createDashboardMutation.isPending}
-                        className="glossy-btn"
+                        className="bg-gradient-to-r from-primary-500 to-primary-600 text-white h-10"
                         data-testid="button-save"
                       >
                         {createDashboardMutation.isPending ? (
@@ -816,14 +816,14 @@ export default function Dashboard() {
                         href={dashboard.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block w-full p-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 text-center font-medium"
+                        className="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 font-medium h-10"
                         data-testid={`link-${dashboard.id}`}
                       >
-                        <ExternalLink className="inline mr-2 h-4 w-4" />
+                        <ExternalLink className="mr-2 h-4 w-4" />
                         Åbn {dashboard.name}
                       </a>
                     ) : (
-                      <div className="w-full p-4 bg-gray-100 text-gray-500 rounded-xl text-center">
+                      <div className="inline-flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-500 rounded-lg h-10">
                         <span className="text-sm">URL mangler - klik tandhjulet for at opdatere</span>
                       </div>
                     )}
