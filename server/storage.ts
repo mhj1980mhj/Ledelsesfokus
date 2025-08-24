@@ -21,7 +21,7 @@ export class MemStorage implements IStorage {
     {
       id: "1",
       name: "Beboerunders\u00f8gelse",
-      url: "https://app.powerbi.com/view?r=eyJrIjoiMDg3ZjRiM2EtMWEwYy00N2VlLWI0MzYtMmE4NjNmYTlmN2JjIiwidCI6ImE5MTc3NzFkLTk0YjYtNGFjNi04YjRmLTBkNDk2Y2ZiMGU0MyIsImMiOjl9",
+      url: "https://app.powerbi.com/reportEmbed?reportId=0772dd9a-24d5-4c64-917e-d50287fcca79&autoAuth=true&ctid=a917771d-94b6-4ac6-8b4f-0d496cfb0e43",
       description: "Analyse af beboertilfredshed og demografi",
       category: "Beboeranalyse",
       createdAt: new Date().toISOString(),
