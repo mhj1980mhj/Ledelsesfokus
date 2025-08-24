@@ -364,6 +364,7 @@ export default function Dashboard() {
                   key={dashboard.id}
                   title={dashboard.name}
                   showExpand
+                  dashboardUrl={dashboard.url || undefined}
                   data-testid={`card-dashboard-${dashboard.id}`}
                 >
                   <div className="space-y-4">

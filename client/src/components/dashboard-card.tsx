@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Download, Maximize2 } from "lucide-react";
+import { Download, Maximize2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DashboardCardProps {
@@ -7,6 +7,7 @@ interface DashboardCardProps {
   children: ReactNode;
   showDownload?: boolean;
   showExpand?: boolean;
+  dashboardUrl?: string;
   "data-testid"?: string;
 }
 
@@ -15,8 +16,15 @@ export default function DashboardCard({
   children, 
   showDownload = false, 
   showExpand = false,
+  dashboardUrl,
   "data-testid": testId
 }: DashboardCardProps) {
+  
+  const handleMaximize = () => {
+    if (dashboardUrl) {
+      window.open(dashboardUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+    }
+  };
   return (
     <div 
       className="dashboard-card bg-white/70 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 shadow-lg"
@@ -43,10 +51,12 @@ export default function DashboardCard({
               <Button
                 variant="ghost"
                 size="icon"
+                onClick={handleMaximize}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
                 data-testid="button-expand"
+                disabled={!dashboardUrl}
               >
-                <Maximize2 className="h-4 w-4" />
+                {dashboardUrl ? <ExternalLink className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </Button>
             )}
           </div>
@@ -56,10 +66,12 @@ export default function DashboardCard({
           <Button
             variant="ghost"
             size="icon"
+            onClick={handleMaximize}
             className="text-gray-400 hover:text-gray-600 transition-colors"
             data-testid="button-expand-default"
+            disabled={!dashboardUrl}
           >
-            <Maximize2 className="h-4 w-4" />
+            {dashboardUrl ? <ExternalLink className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </Button>
         )}
       </div>
