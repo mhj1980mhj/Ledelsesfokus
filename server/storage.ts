@@ -30,35 +30,18 @@ export class DatabaseStorage implements IStorage {
     if (this.isInitialized) return;
     
     try {
-      // Check if we already have the default dashboard
-      const existingDashboards = await db.select().from(powerBIDashboards).where(eq(powerBIDashboards.name, "Beboerundersøgelse"));
+      // Check if we have ANY dashboards in the database
+      const existingDashboards = await db.select().from(powerBIDashboards);
       
+      // Only initialize if the database is completely empty
       if (existingDashboards.length === 0) {
-        // Insert default dashboards
+        // Insert only the main dashboard - remove sample data
         const defaultDashboards = [
           {
             name: "Beboerundersøgelse",
             url: "https://app.powerbi.com/reportEmbed?reportId=0772dd9a-24d5-4c64-917e-d50287fcca79&autoAuth=true&ctid=a917771d-94b6-4ac6-8b4f-0d496cfb0e43",
             description: "Analyse af beboertilfredshed og demografi",
             category: "Beboeranalyse",
-          },
-          {
-            name: "Økonomisk Dashboard",
-            url: "",
-            description: "Finansiel rapportering og budgetanalyse",
-            category: "Økonomi",
-          },
-          {
-            name: "Vedligeholdelse Oversigt",
-            url: "",
-            description: "Sporingsværktøjer for ejendomsvedligeholdelse",
-            category: "Vedligeholdelse",
-          },
-          {
-            name: "Ejendomsportefølje",
-            url: "",
-            description: "Performance og værdivurdering af ejendomme",
-            category: "Ejendomme",
           }
         ];
 
