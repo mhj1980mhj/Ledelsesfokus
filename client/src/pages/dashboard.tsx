@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Settings, Plus, Calendar, ArrowUpDown, Clock, ExternalLink, Trash2 } from "lucide-react";
+import { Search, Settings, Plus, Calendar, ArrowUpDown, Clock, ExternalLink, Trash2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -37,9 +37,8 @@ export default function Dashboard() {
   const [sortBy, setSortBy] = useState<SortOption>("latest");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isEmbedDialogOpen, setIsEmbedDialogOpen] = useState(false);
   const [editingDashboard, setEditingDashboard] = useState<PowerBIDashboard | null>(null);
-  const [embeddingDashboard, setEmbeddingDashboard] = useState<PowerBIDashboard | null>(null);
+  const [viewingDashboard, setViewingDashboard] = useState<PowerBIDashboard | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -193,8 +192,7 @@ export default function Dashboard() {
   };
 
   const handleEmbedDashboard = (dashboard: PowerBIDashboard) => {
-    setEmbeddingDashboard(dashboard);
-    setIsEmbedDialogOpen(true);
+    setViewingDashboard(dashboard);
   };
 
   const handleDeleteDashboard = () => {
@@ -489,42 +487,6 @@ export default function Dashboard() {
               </DialogContent>
             </Dialog>
 
-            {/* Embed Dialog */}
-            <Dialog open={isEmbedDialogOpen} onOpenChange={setIsEmbedDialogOpen}>
-              <DialogContent className="sm:max-w-4xl h-[80vh]" data-testid="embed-dialog">
-                <DialogHeader>
-                  <DialogTitle className="text-gray-900">
-                    {embeddingDashboard?.name || "Power BI Dashboard"}
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="flex-1 h-full">
-                  {embeddingDashboard?.url ? (
-                    <iframe
-                      src={embeddingDashboard.url}
-                      className="w-full h-full border-0 rounded-lg"
-                      allowFullScreen
-                      title={embeddingDashboard.name}
-                      data-testid="powerbi-iframe"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg">
-                      <div className="text-center">
-                        <p className="text-gray-500 mb-4">Ingen URL tilgængelig for dette dashboard</p>
-                        <Button
-                          onClick={() => {
-                            setIsEmbedDialogOpen(false);
-                            handleEditDashboard(embeddingDashboard!);
-                          }}
-                          className="bg-primary-600 hover:bg-primary-700"
-                        >
-                          Tilføj URL
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
           </div>
 
           {/* Search and Sort Controls */}
