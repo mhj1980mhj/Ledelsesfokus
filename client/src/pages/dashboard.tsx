@@ -192,6 +192,7 @@ export default function Dashboard() {
   };
 
   const handleEmbedDashboard = (dashboard: PowerBIDashboard) => {
+    console.log("Expanding dashboard:", dashboard.name);
     setViewingDashboard(dashboard);
   };
 
@@ -418,6 +419,7 @@ export default function Dashboard() {
                             <Textarea 
                               placeholder="Beskriv hvad dette dashboard viser..." 
                               {...field}
+                              value={field.value || ""}
                               className="bg-white/50 min-h-[100px]"
                               data-testid="input-edit-description"
                             />
