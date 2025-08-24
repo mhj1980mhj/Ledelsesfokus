@@ -15,6 +15,7 @@ import { z } from "zod";
 // import PowerBIEmbed from "@/components/power-bi-embed";
 import DashboardCard from "@/components/dashboard-card";
 import { useToast } from "@/hooks/use-toast";
+import logoImage from "@assets/ChatGPT Image 24. aug. 2025, 16.38.56_1756046355129.png";
 
 type PowerBIDashboard = {
   id: string;
@@ -421,8 +422,8 @@ export default function Dashboard() {
         <div className="px-8 py-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-lg">
-                <div className="text-white text-xl font-bold">A2</div>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg">
+                <img src={logoImage} alt="AL2bolig Logo" className="w-12 h-12 object-contain" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-800" data-testid="page-title">
