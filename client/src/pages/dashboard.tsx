@@ -426,10 +426,10 @@ export default function Dashboard() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-800" data-testid="page-title">
-                  al2bolig Power BI Portal
+                  AL2bolig Power BI Portal
                 </h1>
                 <p className="text-gray-600" data-testid="page-subtitle">
-                  Adgang til alle business intelligence dashboards
+                  Ledelsesoverblik
                 </p>
               </div>
             </div>
