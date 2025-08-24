@@ -1,5 +1,7 @@
-import { User, InsertUser, PowerBIDashboard, InsertPowerBIDashboard } from "@shared/schema";
+import { User, InsertUser, PowerBIDashboard, InsertPowerBIDashboard, users, powerBIDashboards } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -15,49 +17,58 @@ export interface IStorage {
   deleteDashboard(id: string): Promise<boolean>;
 }
 
-export class MemStorage implements IStorage {
+export class DatabaseStorage implements IStorage {
   private users: Map<string, User>;
-  private dashboards: PowerBIDashboard[] = [
-    {
-      id: "1",
-      name: "Beboerunders\u00f8gelse",
-      url: "https://app.powerbi.com/reportEmbed?reportId=0772dd9a-24d5-4c64-917e-d50287fcca79&autoAuth=true&ctid=a917771d-94b6-4ac6-8b4f-0d496cfb0e43",
-      description: "Analyse af beboertilfredshed og demografi",
-      category: "Beboeranalyse",
-      createdAt: new Date().toISOString(),
-      isActive: 1
-    },
-    {
-      id: "2",
-      name: "Økonomisk Dashboard",
-      url: "",
-      description: "Finansiel rapportering og budgetanalyse",
-      category: "Økonomi",
-      createdAt: new Date().toISOString(),
-      isActive: 1
-    },
-    {
-      id: "3",
-      name: "Vedligeholdelse Oversigt",
-      url: "",
-      description: "Sporingsværktøjer for ejendomsvedligeholdelse",
-      category: "Vedligeholdelse",
-      createdAt: new Date().toISOString(),
-      isActive: 1
-    },
-    {
-      id: "4",
-      name: "Ejendomsportefølje",
-      url: "",
-      description: "Performance og værdivurdering af ejendomme",
-      category: "Ejendomme",
-      createdAt: new Date().toISOString(),
-      isActive: 1
-    }
-  ];
+  private isInitialized = false;
 
   constructor() {
     this.users = new Map();
+    this.initializeDefaultData();
+  }
+
+  private async initializeDefaultData() {
+    if (this.isInitialized) return;
+    
+    try {
+      // Check if we already have the default dashboard
+      const existingDashboards = await db.select().from(powerBIDashboards).where(eq(powerBIDashboards.name, "Beboerundersøgelse"));
+      
+      if (existingDashboards.length === 0) {
+        // Insert default dashboards
+        const defaultDashboards = [
+          {
+            name: "Beboerundersøgelse",
+            url: "https://app.powerbi.com/reportEmbed?reportId=0772dd9a-24d5-4c64-917e-d50287fcca79&autoAuth=true&ctid=a917771d-94b6-4ac6-8b4f-0d496cfb0e43",
+            description: "Analyse af beboertilfredshed og demografi",
+            category: "Beboeranalyse",
+          },
+          {
+            name: "Økonomisk Dashboard",
+            url: "",
+            description: "Finansiel rapportering og budgetanalyse",
+            category: "Økonomi",
+          },
+          {
+            name: "Vedligeholdelse Oversigt",
+            url: "",
+            description: "Sporingsværktøjer for ejendomsvedligeholdelse",
+            category: "Vedligeholdelse",
+          },
+          {
+            name: "Ejendomsportefølje",
+            url: "",
+            description: "Performance og værdivurdering af ejendomme",
+            category: "Ejendomme",
+          }
+        ];
+
+        await db.insert(powerBIDashboards).values(defaultDashboards);
+      }
+      
+      this.isInitialized = true;
+    } catch (error) {
+      console.error("Error initializing default data:", error);
+    }
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -78,42 +89,45 @@ export class MemStorage implements IStorage {
   }
 
   async getAllDashboards(): Promise<PowerBIDashboard[]> {
-    return this.dashboards.filter(d => d.isActive === 1);
+    await this.initializeDefaultData();
+    const dashboards = await db.select().from(powerBIDashboards).where(eq(powerBIDashboards.isActive, 1));
+    return dashboards;
   }
 
   async getDashboard(id: string): Promise<PowerBIDashboard | null> {
-    return this.dashboards.find(d => d.id === id && d.isActive === 1) || null;
+    const [dashboard] = await db.select().from(powerBIDashboards).where(eq(powerBIDashboards.id, id));
+    return dashboard || null;
   }
 
   async createDashboard(dashboard: InsertPowerBIDashboard): Promise<PowerBIDashboard> {
-    const newDashboard: PowerBIDashboard = {
-      id: randomUUID(),
-      name: dashboard.name,
-      url: dashboard.url,
-      description: dashboard.description || null,
-      category: dashboard.category || "General",
-      createdAt: new Date().toISOString(),
-      isActive: 1
-    };
-    this.dashboards.push(newDashboard);
+    const [newDashboard] = await db
+      .insert(powerBIDashboards)
+      .values({
+        name: dashboard.name,
+        url: dashboard.url,
+        description: dashboard.description || null,
+        category: dashboard.category || "General",
+      })
+      .returning();
     return newDashboard;
   }
 
   async updateDashboard(id: string, dashboard: Partial<InsertPowerBIDashboard>): Promise<PowerBIDashboard | null> {
-    const index = this.dashboards.findIndex(d => d.id === id);
-    if (index === -1) return null;
-    
-    this.dashboards[index] = { ...this.dashboards[index], ...dashboard };
-    return this.dashboards[index];
+    const [updatedDashboard] = await db
+      .update(powerBIDashboards)
+      .set(dashboard)
+      .where(eq(powerBIDashboards.id, id))
+      .returning();
+    return updatedDashboard || null;
   }
 
   async deleteDashboard(id: string): Promise<boolean> {
-    const index = this.dashboards.findIndex(d => d.id === id);
-    if (index === -1) return false;
-    
-    this.dashboards[index].isActive = 0;
-    return true;
+    const result = await db
+      .update(powerBIDashboards)
+      .set({ isActive: 0 })
+      .where(eq(powerBIDashboards.id, id));
+    return result.rowCount > 0;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
