@@ -235,7 +235,7 @@ export default function Dashboard() {
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Tilbage til oversigt
                 </Button>
-                <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-[#9c9387] rounded-lg flex items-center justify-center">
                   <Settings className="h-4 w-4 text-white" />
                 </div>
                 <div>
@@ -277,7 +277,7 @@ export default function Dashboard() {
                 <p className="text-gray-500 mb-4">Ingen URL tilgængelig for dette dashboard</p>
                 <Button
                   onClick={() => handleEditDashboard(viewingDashboard)}
-                  className="bg-primary-600 hover:bg-primary-700"
+                  className="bg-[#9c9387] hover:bg-[#8a816d] text-white"
                 >
                   Tilføj URL
                 </Button>
@@ -400,7 +400,7 @@ export default function Dashboard() {
                     <Button
                       type="submit"
                       disabled={updateDashboardMutation.isPending}
-                      className="bg-gradient-to-r from-primary-500 to-primary-600 text-white h-10"
+                      className="bg-[#9c9387] hover:bg-[#8a816d] text-white h-10"
                       data-testid="button-save-edit"
                     >
                       {updateDashboardMutation.isPending ? "Gemmer..." : "Gem ændringer"}
