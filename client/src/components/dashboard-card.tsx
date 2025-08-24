@@ -10,6 +10,7 @@ interface DashboardCardProps {
   showSettings?: boolean;
   dashboardUrl?: string;
   onSettings?: () => void;
+  onExpand?: () => void;
   "data-testid"?: string;
 }
 
@@ -21,12 +22,13 @@ export default function DashboardCard({
   showSettings = false,
   dashboardUrl,
   onSettings,
+  onExpand,
   "data-testid": testId
 }: DashboardCardProps) {
   
   const handleMaximize = () => {
-    if (dashboardUrl) {
-      window.open(dashboardUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+    if (dashboardUrl && onExpand) {
+      onExpand();
     }
   };
   return (
