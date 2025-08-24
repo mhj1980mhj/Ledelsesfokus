@@ -422,9 +422,7 @@ export default function Dashboard() {
         <div className="px-8 py-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg">
-                <img src={logoImage} alt="AL2bolig Logo" className="w-12 h-12 object-contain" />
-              </div>
+              <img src={logoImage} alt="AL2bolig Logo" className="w-12 h-12 object-contain" />
               <div>
                 <h1 className="text-3xl font-bold text-gray-800" data-testid="page-title">
                   AL2bolig Power BI Portal
