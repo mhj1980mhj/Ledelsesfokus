@@ -416,7 +416,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
       <header className="bg-gradient-to-r from-white/85 to-gray-50/85 backdrop-blur-xl border-b border-gray-200/50 sticky top-0 z-50">
         <div className="px-8 py-6">
