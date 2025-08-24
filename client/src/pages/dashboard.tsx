@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Settings, Plus, Calendar, ArrowUpDown, Clock, ExternalLink } from "lucide-react";
+import { Search, Settings, Plus, Calendar, ArrowUpDown, Clock, ExternalLink, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -36,10 +36,22 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("latest");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingDashboard, setEditingDashboard] = useState<PowerBIDashboard | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      url: "",
+      description: "",
+      category: "General"
+    }
+  });
+
+  const editForm = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
@@ -84,6 +96,36 @@ export default function Dashboard() {
     }
   });
 
+  const updateDashboardMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: z.infer<typeof formSchema> }) => {
+      const response = await fetch(`/api/dashboards/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error("Failed to update dashboard");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboards"] });
+      toast({
+        title: "Opdateret!",
+        description: "Dashboard er opdateret med succes"
+      });
+      setIsEditDialogOpen(false);
+      setEditingDashboard(null);
+      editForm.reset();
+    },
+    onError: (error) => {
+      toast({
+        title: "Fejl",
+        description: "Kunne ikke opdatere dashboard. Prøv igen.",
+        variant: "destructive"
+      });
+      console.error("Error updating dashboard:", error);
+    }
+  });
+
   const deleteDashboardMutation = useMutation({
     mutationFn: async (id: string) => {
       const response = await fetch(`/api/dashboards/${id}`, {
@@ -98,6 +140,8 @@ export default function Dashboard() {
         title: "Slettet!",
         description: "Dashboard er fjernet med succes"
       });
+      setIsEditDialogOpen(false);
+      setEditingDashboard(null);
     },
     onError: (error) => {
       toast({
@@ -127,6 +171,29 @@ export default function Dashboard() {
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     createDashboardMutation.mutate(data);
+  };
+
+  const onEditSubmit = (data: z.infer<typeof formSchema>) => {
+    if (editingDashboard) {
+      updateDashboardMutation.mutate({ id: editingDashboard.id, data });
+    }
+  };
+
+  const handleEditDashboard = (dashboard: PowerBIDashboard) => {
+    setEditingDashboard(dashboard);
+    editForm.reset({
+      name: dashboard.name,
+      url: dashboard.url,
+      description: dashboard.description || "",
+      category: dashboard.category
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteDashboard = () => {
+    if (editingDashboard) {
+      deleteDashboardMutation.mutate(editingDashboard.id);
+    }
   };
 
   if (error) {
@@ -289,6 +356,131 @@ export default function Dashboard() {
                 </Form>
               </DialogContent>
             </Dialog>
+
+            {/* Edit Dashboard Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogContent className="sm:max-w-md" data-testid="edit-dialog">
+                <DialogHeader>
+                  <DialogTitle className="text-gray-900">
+                    Rediger Dashboard
+                  </DialogTitle>
+                </DialogHeader>
+                <Form {...editForm}>
+                  <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-6">
+                    <FormField
+                      control={editForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700">Navn</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Dashboard navn..." 
+                              {...field} 
+                              className="bg-white/50"
+                              data-testid="input-edit-name"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={editForm.control}
+                      name="url"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700">Power BI URL</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="https://app.powerbi.com/..." 
+                              {...field}
+                              className="bg-white/50"
+                              data-testid="input-edit-url"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={editForm.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700">Beskrivelse</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Beskriv hvad dette dashboard viser..." 
+                              {...field}
+                              className="bg-white/50 min-h-[100px]"
+                              data-testid="input-edit-description"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={editForm.control}
+                      name="category"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700">Kategori</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="bg-white/50" data-testid="select-edit-category">
+                                <SelectValue placeholder="Vælg kategori" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Økonomi">Økonomi</SelectItem>
+                              <SelectItem value="Beboeranalyse">Beboeranalyse</SelectItem>
+                              <SelectItem value="Vedligeholdelse">Vedligeholdelse</SelectItem>
+                              <SelectItem value="Ejendomme">Ejendomme</SelectItem>
+                              <SelectItem value="Bæredygtighed">Bæredygtighed</SelectItem>
+                              <SelectItem value="General">General</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex justify-between gap-3 pt-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleDeleteDashboard}
+                        disabled={deleteDashboardMutation.isPending}
+                        className="text-red-600 border-red-200 hover:bg-red-50"
+                        data-testid="button-delete-dashboard"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        {deleteDashboardMutation.isPending ? "Sletter..." : "Slet"}
+                      </Button>
+                      <div className="flex gap-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setIsEditDialogOpen(false)}
+                          data-testid="button-cancel-edit"
+                        >
+                          Annuller
+                        </Button>
+                        <Button
+                          type="submit"
+                          disabled={updateDashboardMutation.isPending}
+                          className="bg-primary-600 hover:bg-primary-700"
+                          data-testid="button-save-edit"
+                        >
+                          {updateDashboardMutation.isPending ? "Gemmer..." : "Gem ændringer"}
+                        </Button>
+                      </div>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
           </div>
 
           {/* Search and Sort Controls */}
@@ -389,9 +581,9 @@ export default function Dashboard() {
                   key={dashboard.id}
                   title={dashboard.name}
                   showExpand
-                  showDelete
+                  showSettings
                   dashboardUrl={dashboard.url || undefined}
-                  onDelete={() => deleteDashboardMutation.mutate(dashboard.id)}
+                  onSettings={() => handleEditDashboard(dashboard)}
                   data-testid={`card-dashboard-${dashboard.id}`}
                 >
                   <div className="space-y-4">

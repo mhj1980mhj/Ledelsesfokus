@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Download, ExternalLink, Trash2, Maximize2 } from "lucide-react";
+import { Download, ExternalLink, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DashboardCardProps {
@@ -7,9 +7,9 @@ interface DashboardCardProps {
   children: ReactNode;
   showDownload?: boolean;
   showExpand?: boolean;
-  showDelete?: boolean;
+  showSettings?: boolean;
   dashboardUrl?: string;
-  onDelete?: () => void;
+  onSettings?: () => void;
   "data-testid"?: string;
 }
 
@@ -18,9 +18,9 @@ export default function DashboardCard({
   children, 
   showDownload = false, 
   showExpand = false,
-  showDelete = false,
+  showSettings = false,
   dashboardUrl,
-  onDelete,
+  onSettings,
   "data-testid": testId
 }: DashboardCardProps) {
   
@@ -39,7 +39,7 @@ export default function DashboardCard({
           {title}
         </h3>
         
-        {(showDownload || showExpand || showDelete) && (
+        {(showDownload || showExpand || showSettings) && (
           <div className="flex space-x-2" data-testid="card-actions">
             {showDownload && (
               <Button
@@ -63,21 +63,21 @@ export default function DashboardCard({
                 <ExternalLink className="h-4 w-4" />
               </Button>
             )}
-            {showDelete && (
+            {showSettings && (
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={onDelete}
-                className="text-gray-400 hover:text-red-600 transition-colors"
-                data-testid="button-delete"
+                onClick={onSettings}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                data-testid="button-settings"
               >
-                <Trash2 className="h-4 w-4" />
+                <Settings className="h-4 w-4" />
               </Button>
             )}
           </div>
         )}
         
-        {!showDownload && !showExpand && !showDelete && (
+        {!showDownload && !showExpand && !showSettings && (
           <Button
             variant="ghost"
             size="icon"
