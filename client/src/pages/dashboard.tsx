@@ -1,11 +1,13 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Settings, Plus, Calendar, ArrowUpDown, Clock, ExternalLink, Trash2, ArrowLeft } from "lucide-react";
+import { Search, Settings, Plus, Calendar, ArrowUpDown, Clock, ExternalLink, Trash2, ArrowLeft, ChevronDown, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -68,6 +70,12 @@ export default function Dashboard() {
     retry: 3,
     staleTime: 30000
   });
+
+  // Get unique categories from existing dashboards
+  const existingCategories = useMemo(() => {
+    const categories = dashboards.map(dashboard => dashboard.category).filter(Boolean);
+    return Array.from(new Set(categories)).sort();
+  }, [dashboards]);
 
   const createDashboardMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
@@ -357,21 +365,49 @@ export default function Dashboard() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-gray-700">Kategori</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="bg-white/50" data-testid="select-edit-category">
-                            <SelectValue placeholder="Vælg kategori" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Økonomi">Økonomi</SelectItem>
-                          <SelectItem value="Beboeranalyse">Beboeranalyse</SelectItem>
-                          <SelectItem value="Vedligeholdelse">Vedligeholdelse</SelectItem>
-                          <SelectItem value="Ejendomme">Ejendomme</SelectItem>
-                          <SelectItem value="Bæredygtighed">Bæredygtighed</SelectItem>
-                          <SelectItem value="General">General</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            placeholder="Skriv eller vælg kategori..."
+                            value={field.value || ""}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            className="bg-white/50"
+                            data-testid="input-edit-category-fullscreen"
+                          />
+                          {existingCategories.length > 0 && (
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute right-1 top-1 h-6 w-6 p-0 hover:bg-gray-100"
+                                  type="button"
+                                >
+                                  <ChevronDown className="h-3 w-3" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-full p-0" align="start">
+                                <Command>
+                                  <CommandList>
+                                    <CommandGroup>
+                                      {existingCategories.map((category) => (
+                                        <CommandItem
+                                          key={category}
+                                          onSelect={() => field.onChange(category)}
+                                          className="cursor-pointer"
+                                        >
+                                          <Check className={`mr-2 h-4 w-4 ${field.value === category ? 'opacity-100' : 'opacity-0'}`} />
+                                          {category}
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+                          )}
+                        </div>
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -491,21 +527,48 @@ export default function Dashboard() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Kategori</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-category">
-                                <SelectValue placeholder="Vælg kategori" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="Økonomi">Økonomi</SelectItem>
-                              <SelectItem value="Beboeranalyse">Beboeranalyse</SelectItem>
-                              <SelectItem value="Vedligeholdelse">Vedligeholdelse</SelectItem>
-                              <SelectItem value="Ejendomme">Ejendomme</SelectItem>
-                              <SelectItem value="Bæredygtighed">Bæredygtighed</SelectItem>
-                              <SelectItem value="General">General</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <FormControl>
+                            <div className="relative">
+                              <Input
+                                placeholder="Skriv eller vælg kategori..."
+                                value={field.value || ""}
+                                onChange={(e) => field.onChange(e.target.value)}
+                                data-testid="input-category"
+                              />
+                              {existingCategories.length > 0 && (
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="absolute right-1 top-1 h-6 w-6 p-0 hover:bg-gray-100"
+                                      type="button"
+                                    >
+                                      <ChevronDown className="h-3 w-3" />
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-full p-0" align="start">
+                                    <Command>
+                                      <CommandList>
+                                        <CommandGroup>
+                                          {existingCategories.map((category) => (
+                                            <CommandItem
+                                              key={category}
+                                              onSelect={() => field.onChange(category)}
+                                              className="cursor-pointer"
+                                            >
+                                              <Check className={`mr-2 h-4 w-4 ${field.value === category ? 'opacity-100' : 'opacity-0'}`} />
+                                              {category}
+                                            </CommandItem>
+                                          ))}
+                                        </CommandGroup>
+                                      </CommandList>
+                                    </Command>
+                                  </PopoverContent>
+                                </Popover>
+                              )}
+                            </div>
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -634,21 +697,49 @@ export default function Dashboard() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-gray-700">Kategori</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="bg-white/50" data-testid="select-edit-category">
-                                <SelectValue placeholder="Vælg kategori" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="Økonomi">Økonomi</SelectItem>
-                              <SelectItem value="Beboeranalyse">Beboeranalyse</SelectItem>
-                              <SelectItem value="Vedligeholdelse">Vedligeholdelse</SelectItem>
-                              <SelectItem value="Ejendomme">Ejendomme</SelectItem>
-                              <SelectItem value="Bæredygtighed">Bæredygtighed</SelectItem>
-                              <SelectItem value="General">General</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <FormControl>
+                            <div className="relative">
+                              <Input
+                                placeholder="Skriv eller vælg kategori..."
+                                value={field.value || ""}
+                                onChange={(e) => field.onChange(e.target.value)}
+                                className="bg-white/50"
+                                data-testid="input-edit-category"
+                              />
+                              {existingCategories.length > 0 && (
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="absolute right-1 top-1 h-6 w-6 p-0 hover:bg-gray-100"
+                                      type="button"
+                                    >
+                                      <ChevronDown className="h-3 w-3" />
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-full p-0" align="start">
+                                    <Command>
+                                      <CommandList>
+                                        <CommandGroup>
+                                          {existingCategories.map((category) => (
+                                            <CommandItem
+                                              key={category}
+                                              onSelect={() => field.onChange(category)}
+                                              className="cursor-pointer"
+                                            >
+                                              <Check className={`mr-2 h-4 w-4 ${field.value === category ? 'opacity-100' : 'opacity-0'}`} />
+                                              {category}
+                                            </CommandItem>
+                                          ))}
+                                        </CommandGroup>
+                                      </CommandList>
+                                    </Command>
+                                  </PopoverContent>
+                                </Popover>
+                              )}
+                            </div>
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
