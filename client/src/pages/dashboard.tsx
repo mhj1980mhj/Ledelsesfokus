@@ -163,6 +163,12 @@ export default function Dashboard() {
     }
   });
 
+  // Helper function to truncate titles to 30 characters
+  const truncateTitle = (title: string, maxLength: number = 30) => {
+    if (title.length <= maxLength) return title;
+    return title.substring(0, maxLength).trim() + "...";
+  };
+
   const filteredAndSortedDashboards = useMemo(() => {
     let filtered = dashboards.filter(dashboard => 
       dashboard.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -472,11 +478,12 @@ export default function Dashboard() {
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button 
-                  className="bg-[#9c9387] hover:bg-[#8a816d] text-white px-4 py-2 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300 h-10"
+                  size="sm"
+                  variant="ghost"
+                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                   data-testid="button-settings"
                 >
-                  <Settings className="mr-2 h-4 w-4" />
-                  Tilføj Dashboard
+                  <Settings className="h-4 w-4" />
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]" data-testid="dialog-add-dashboard">
@@ -878,7 +885,7 @@ export default function Dashboard() {
               {filteredAndSortedDashboards.map((dashboard) => (
                 <DashboardCard
                   key={dashboard.id}
-                  title={dashboard.name}
+                  title={truncateTitle(dashboard.name)}
                   showExpand
                   showSettings
                   dashboardUrl={dashboard.url || undefined}
@@ -908,7 +915,7 @@ export default function Dashboard() {
                         data-testid={`link-${dashboard.id}`}
                       >
                         <ExternalLink className="mr-2 h-4 w-4" />
-                        Åbn {dashboard.name}
+                        {truncateTitle(dashboard.name)}
                       </button>
                     ) : (
                       <div className="inline-flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-500 rounded-lg h-10">
