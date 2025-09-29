@@ -803,6 +803,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             </Button>
           </div>
         </div>
+      </div>
       </header>
 
       {/* Main Content */}
@@ -849,10 +850,8 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             </div>
           </div>
         </div>
-      </header>
+        )}
 
-      {/* Main Content */}
-      <main className="p-8">
         {isLoading ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
             {[...Array(6)].map((_, i) => (
