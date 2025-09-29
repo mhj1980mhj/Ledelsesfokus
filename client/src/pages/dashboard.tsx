@@ -35,7 +35,11 @@ const formSchema = insertPowerBIDashboardSchema.extend({
   url: z.string().url("Indtast venligst en gyldig URL")
 });
 
-export default function Dashboard() {
+interface DashboardProps {
+  onLogout: () => void;
+}
+
+export default function Dashboard({ onLogout }: DashboardProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("latest");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -475,17 +479,18 @@ export default function Dashboard() {
               </div>
             </div>
             
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button 
-                  size="sm"
-                  variant="ghost"
-                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                  data-testid="button-settings"
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </DialogTrigger>
+            <div className="flex items-center space-x-2">
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button 
+                    size="sm"
+                    variant="ghost"
+                    className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                    data-testid="button-settings"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]" data-testid="dialog-add-dashboard">
                 <DialogHeader>
                   <DialogTitle>Tilføj nyt Power BI Dashboard</DialogTitle>
@@ -786,10 +791,25 @@ export default function Dashboard() {
                 </Form>
               </DialogContent>
             </Dialog>
-
+            
+            <Button 
+              size="sm"
+              variant="outline"
+              onClick={onLogout}
+              className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+              data-testid="button-logout"
+            >
+              Log ud
+            </Button>
           </div>
+        </div>
+      </header>
 
-          {/* Search and Sort Controls */}
+      {/* Main Content */}
+      <main className="p-8">
+        {!isLoading && (
+          <div className="mb-8">
+            {/* Search and Sort Controls */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
