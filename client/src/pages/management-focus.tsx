@@ -1,19 +1,55 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Plus, Settings as SettingsIcon } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navigation from "@/components/navigation";
 import PageHeader from "@/components/page-header";
+import QuarterlyCalendar from "@/components/quarterly-calendar";
+import ProjectFormDialog from "@/components/project-form-dialog";
+import LoadingShimmer from "@/components/loading-shimmer";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import type { Project } from "@shared/schema";
+import { z } from "zod";
+import { insertProjectSchema } from "@shared/schema";
 
 interface ManagementFocusProps {
   onLogout: () => void;
 }
 
+const projectFormSchema = insertProjectSchema.extend({
+  startDate: z.string().min(1, "Start dato er påkrævet"),
+  endDate: z.string().min(1, "Slut dato er påkrævet"),
+});
+
 export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedArea, setSelectedArea] = useState<string>("all");
+  const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const { data: projects = [], isLoading: isLoadingProjects } = useQuery<Project[]>({
+    queryKey: ["/api/projects"],
+  });
+
+  const createProjectMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof projectFormSchema>) => {
+      return await apiRequest("/api/projects", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      setIsProjectDialogOpen(false);
+      toast({
+        title: "Projekt oprettet",
+        description: "Dit nye projekt er blevet tilføjet til tidslinjen",
+      });
+    },
+    onError: () => {
+    
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
