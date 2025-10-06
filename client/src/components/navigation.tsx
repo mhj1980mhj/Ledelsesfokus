@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { BarChart3, Settings, Focus } from "lucide-react";
+import { BarChart3, Focus } from "lucide-react";
 
 export default function Navigation() {
   const [location] = useLocation();
@@ -7,7 +7,6 @@ export default function Navigation() {
   const navItems = [
     { path: "/", label: "Ledelsesfokus", icon: Focus },
     { path: "/powerbi", label: "Power BI Rapporter", icon: BarChart3 },
-    { path: "/settings", label: "Indstillinger", icon: Settings },
   ];
 
   return (
