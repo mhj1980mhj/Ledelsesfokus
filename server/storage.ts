@@ -109,7 +109,7 @@ export class DatabaseStorage implements IStorage {
       .update(powerBIDashboards)
       .set({ isActive: 0 })
       .where(eq(powerBIDashboards.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 }
 

@@ -13,7 +13,7 @@ export const powerBIDashboards = pgTable("power_bi_dashboards", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   url: text("url").notNull(),
-  description: text("description").default(null),
+  description: text("description"),
   category: text("category").notNull().default("General"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   isActive: integer("is_active").notNull().default(1),
