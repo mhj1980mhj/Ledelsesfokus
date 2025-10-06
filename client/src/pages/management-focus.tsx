@@ -1,62 +1,104 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Plus, Settings as SettingsIcon } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navigation from "@/components/navigation";
 import PageHeader from "@/components/page-header";
 import QuarterlyCalendar from "@/components/quarterly-calendar";
 import ProjectFormDialog from "@/components/project-form-dialog";
-import LoadingShimmer from "@/components/loading-shimmer";
-import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import type { Project } from "@shared/schema";
-import { z } from "zod";
-import { insertProjectSchema } from "@shared/schema";
 
 interface ManagementFocusProps {
   onLogout: () => void;
 }
 
-const projectFormSchema = insertProjectSchema.extend({
-  startDate: z.string().min(1, "Start dato er påkrævet"),
-  endDate: z.string().min(1, "Slut dato er påkrævet"),
-});
-
 export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedArea, setSelectedArea] = useState<string>("all");
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
   const { toast } = useToast();
 
-  const { data: projects = [], isLoading: isLoadingProjects } = useQuery<Project[]>({
+  const { data: projects = [], isLoading } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
   });
 
   const createProjectMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof projectFormSchema>) => {
-      return await apiRequest("/api/projects", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
-    },
+    mutationFn: (data: any) => apiRequest("/api/projects", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       setIsProjectDialogOpen(false);
       toast({
         title: "Projekt oprettet",
-        description: "Dit nye projekt er blevet tilføjet til tidslinjen",
+        description: "Dit projekt er blevet oprettet succesfuldt.",
       });
     },
     onError: () => {
-    
+      toast({
+        title: "Fejl",
+        description: "Kunne ikke oprette projekt.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateProjectMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      apiRequest(`/api/projects/${id}`, "PUT", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      setIsProjectDialogOpen(false);
+      setEditingProject(null);
+      toast({
+        title: "Projekt opdateret",
+        description: "Projektet er blevet opdateret succesfuldt.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Fejl",
+        description: "Kunne ikke opdatere projekt.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleProjectSubmit = (data: any) => {
+    if (editingProject) {
+      updateProjectMutation.mutate({ id: editingProject.id, data });
+    } else {
+      createProjectMutation.mutate(data);
+    }
+  };
+
+  const handleProjectClick = (project: Project) => {
+    setEditingProject(project);
+    setIsProjectDialogOpen(true);
+  };
+
+  const handleCreateClick = () => {
+    setEditingProject(null);
+    setIsProjectDialogOpen(true);
+  };
+
+  const filteredProjects = projects.filter((project) => {
+    const matchesSearch =
+      searchQuery === "" ||
+      project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.owner.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <PageHeader title="Ledelsesfokus" subtitle="Projektoverblik" onLogout={onLogout} />
       <Navigation />
 
-      {/* Main Content with Tabs */}
       <main className="max-w-7xl mx-auto px-8 py-8">
         <Tabs defaultValue="projekter" className="w-full">
           <TabsList className="mb-8">
@@ -68,12 +110,9 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
             </TabsTrigger>
           </TabsList>
 
-          {/* Projekter Tab */}
           <TabsContent value="projekter" className="space-y-8">
-            {/* Filter and Actions Bar */}
             <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 shadow-lg">
               <div className="flex items-center gap-4">
-                {/* Search */}
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
@@ -86,22 +125,9 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
                   />
                 </div>
 
-                {/* Area Filter */}
-                <Select value={selectedArea} onValueChange={setSelectedArea}>
-                  <SelectTrigger className="w-[200px]" data-testid="select-area">
-                    <SelectValue placeholder="Vælg område" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Alle områder</SelectItem>
-                    <SelectItem value="sekretariat">Sekretariat</SelectItem>
-                    <SelectItem value="drift">Drift</SelectItem>
-                    <SelectItem value="it">IT</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                {/* Create Project Button */}
                 <Button
                   className="bg-[#9c9387] hover:bg-[#8a816d] text-white"
+                  onClick={handleCreateClick}
                   data-testid="button-create-project"
                 >
                   <Plus className="mr-2 h-4 w-4" />
@@ -110,25 +136,31 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
               </div>
             </div>
 
-            {/* Timeline Area - Placeholder for now */}
-            <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-8 border border-gray-200/50 shadow-lg min-h-[500px]">
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Plus className="h-8 w-8 text-gray-400" />
+            {isLoading ? (
+              <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-8 border border-gray-200/50 shadow-lg min-h-[500px] flex items-center justify-center">
+                <div className="text-gray-500">Indlæser projekter...</div>
+              </div>
+            ) : filteredProjects.length === 0 && searchQuery === "" ? (
+              <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-8 border border-gray-200/50 shadow-lg min-h-[500px]">
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Plus className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                      Ingen projekter endnu
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      Klik på "Opret projekt" for at tilføje dit første projekt til tidslinjen
+                    </p>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                    Ingen projekter endnu
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    Klik på "Opret projekt" for at tilføje dit første projekt til tidslinjen
-                  </p>
                 </div>
               </div>
-            </div>
+            ) : (
+              <QuarterlyCalendar projects={filteredProjects} onProjectClick={handleProjectClick} />
+            )}
           </TabsContent>
 
-          {/* Områder Tab */}
           <TabsContent value="omraader">
             <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 shadow-lg">
               <div className="flex items-center justify-between mb-6">
@@ -147,7 +179,6 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
                 </Button>
               </div>
 
-              {/* Areas List - Placeholder */}
               <div className="space-y-3">
                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                   <div className="flex items-center justify-between">
@@ -181,6 +212,14 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
           </TabsContent>
         </Tabs>
       </main>
+
+      <ProjectFormDialog
+        open={isProjectDialogOpen}
+        onOpenChange={setIsProjectDialogOpen}
+        onSubmit={handleProjectSubmit}
+        project={editingProject}
+        isPending={createProjectMutation.isPending || updateProjectMutation.isPending}
+      />
     </div>
   );
 }
