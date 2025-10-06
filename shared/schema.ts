@@ -19,6 +19,16 @@ export const powerBIDashboards = pgTable("power_bi_dashboards", {
   isActive: integer("is_active").notNull().default(1),
 });
 
+export const projects = pgTable("projects", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  startDate: text("start_date").notNull(),
+  endDate: text("end_date").notNull(),
+  status: text("status").notNull().default("planned"),
+  owner: text("owner").notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -30,7 +40,13 @@ export const insertPowerBIDashboardSchema = createInsertSchema(powerBIDashboards
   isActive: true,
 });
 
+export const insertProjectSchema = createInsertSchema(projects).omit({
+  id: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertPowerBIDashboard = z.infer<typeof insertPowerBIDashboardSchema>;
 export type PowerBIDashboard = typeof powerBIDashboards.$inferSelect;
+export type InsertProject = z.infer<typeof insertProjectSchema>;
+export type Project = typeof projects.$inferSelect;
