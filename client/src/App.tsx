@@ -6,7 +6,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import ManagementFocus from "@/pages/management-focus";
 import PowerBI from "@/pages/powerbi";
-import Settings from "@/pages/settings";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
@@ -23,7 +22,6 @@ function Router({ isAuthenticated, onLogin, onLogout }: {
     <Switch>
       <Route path="/" component={() => <ManagementFocus onLogout={onLogout} />} />
       <Route path="/powerbi" component={() => <PowerBI onLogout={onLogout} />} />
-      <Route path="/settings" component={() => <Settings onLogout={onLogout} />} />
       <Route component={NotFound} />
     </Switch>
   );
