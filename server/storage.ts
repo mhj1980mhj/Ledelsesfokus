@@ -1,4 +1,4 @@
-import { User, InsertUser, PowerBIDashboard, InsertPowerBIDashboard, users, powerBIDashboards } from "@shared/schema";
+import { User, InsertUser, PowerBIDashboard, InsertPowerBIDashboard, Project, InsertProject, users, powerBIDashboards, projects } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -15,6 +15,13 @@ export interface IStorage {
   createDashboard(dashboard: InsertPowerBIDashboard): Promise<PowerBIDashboard>;
   updateDashboard(id: string, dashboard: Partial<InsertPowerBIDashboard>): Promise<PowerBIDashboard | null>;
   deleteDashboard(id: string): Promise<boolean>;
+
+  // Projects
+  getAllProjects(): Promise<Project[]>;
+  getProject(id: string): Promise<Project | null>;
+  createProject(project: InsertProject): Promise<Project>;
+  updateProject(id: string, project: Partial<InsertProject>): Promise<Project | null>;
+  deleteProject(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -109,6 +116,38 @@ export class DatabaseStorage implements IStorage {
       .update(powerBIDashboards)
       .set({ isActive: 0 })
       .where(eq(powerBIDashboards.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getAllProjects(): Promise<Project[]> {
+    const projectList = await db.select().from(projects);
+    return projectList;
+  }
+
+  async getProject(id: string): Promise<Project | null> {
+    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+    return project || null;
+  }
+
+  async createProject(project: InsertProject): Promise<Project> {
+    const [newProject] = await db
+      .insert(projects)
+      .values(project)
+      .returning();
+    return newProject;
+  }
+
+  async updateProject(id: string, project: Partial<InsertProject>): Promise<Project | null> {
+    const [updatedProject] = await db
+      .update(projects)
+      .set(project)
+      .where(eq(projects.id, id))
+      .returning();
+    return updatedProject || null;
+  }
+
+  async deleteProject(id: string): Promise<boolean> {
+    const result = await db.delete(projects).where(eq(projects.id, id));
     return (result.rowCount ?? 0) > 0;
   }
 }

@@ -1,5 +1,5 @@
 import { Request, Response, Router } from "express";
-import { insertPowerBIDashboardSchema } from "@shared/schema";
+import { insertPowerBIDashboardSchema, insertProjectSchema } from "@shared/schema";
 import { storage } from "./storage";
 
 const router = Router();
@@ -74,6 +74,79 @@ router.delete("/api/dashboards/:id", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error deleting dashboard:", error);
     res.status(500).json({ error: "Failed to delete dashboard" });
+  }
+});
+
+// Project Routes
+router.get("/api/projects", async (req: Request, res: Response) => {
+  try {
+    const projectsList = await storage.getAllProjects();
+    res.json(projectsList);
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    res.status(500).json({ error: "Failed to fetch projects" });
+  }
+});
+
+router.get("/api/projects/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const project = await storage.getProject(id);
+    if (!project) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+    res.json(project);
+  } catch (error) {
+    console.error("Error fetching project:", error);
+    res.status(500).json({ error: "Failed to fetch project" });
+  }
+});
+
+router.post("/api/projects", async (req: Request, res: Response) => {
+  try {
+    const validation = insertProjectSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Invalid project data", details: validation.error });
+    }
+    
+    const project = await storage.createProject(validation.data);
+    res.status(201).json(project);
+  } catch (error) {
+    console.error("Error creating project:", error);
+    res.status(500).json({ error: "Failed to create project" });
+  }
+});
+
+router.put("/api/projects/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const validation = insertProjectSchema.partial().safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Invalid project data", details: validation.error });
+    }
+    
+    const project = await storage.updateProject(id, validation.data);
+    if (!project) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+    res.json(project);
+  } catch (error) {
+    console.error("Error updating project:", error);
+    res.status(500).json({ error: "Failed to update project" });
+  }
+});
+
+router.delete("/api/projects/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const success = await storage.deleteProject(id);
+    if (!success) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting project:", error);
+    res.status(500).json({ error: "Failed to delete project" });
   }
 });
 
