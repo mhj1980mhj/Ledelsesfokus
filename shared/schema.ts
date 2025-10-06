@@ -27,6 +27,8 @@ export const projects = pgTable("projects", {
   endDate: text("end_date").notNull(),
   status: text("status").notNull().default("planned"),
   owner: text("owner").notNull(),
+  creatorInitials: text("creator_initials").notNull().default("--"),
+  color: text("color").notNull().default("#3b82f6"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
