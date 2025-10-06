@@ -120,15 +120,23 @@ router.post("/api/projects", async (req: Request, res: Response) => {
 router.put("/api/projects/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const validation = insertProjectSchema.partial().safeParse(req.body);
+    const { verificationInitials, ...projectData } = req.body;
+    
+    const validation = insertProjectSchema.partial().safeParse(projectData);
     if (!validation.success) {
       return res.status(400).json({ error: "Invalid project data", details: validation.error });
     }
     
-    const project = await storage.updateProject(id, validation.data);
-    if (!project) {
+    const existingProject = await storage.getProject(id);
+    if (!existingProject) {
       return res.status(404).json({ error: "Project not found" });
     }
+    
+    if (!verificationInitials || verificationInitials.toLowerCase() !== existingProject.creatorInitials.toLowerCase()) {
+      return res.status(403).json({ error: "Initials verification failed. You must provide the correct creator initials to edit this project." });
+    }
+    
+    const project = await storage.updateProject(id, validation.data);
     res.json(project);
   } catch (error) {
     console.error("Error updating project:", error);
@@ -139,10 +147,18 @@ router.put("/api/projects/:id", async (req: Request, res: Response) => {
 router.delete("/api/projects/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const success = await storage.deleteProject(id);
-    if (!success) {
+    const { verificationInitials } = req.body;
+    
+    const existingProject = await storage.getProject(id);
+    if (!existingProject) {
       return res.status(404).json({ error: "Project not found" });
     }
+    
+    if (!verificationInitials || verificationInitials.toLowerCase() !== existingProject.creatorInitials.toLowerCase()) {
+      return res.status(403).json({ error: "Initials verification failed. You must provide the correct creator initials to delete this project." });
+    }
+    
+    const success = await storage.deleteProject(id);
     res.json({ success: true });
   } catch (error) {
     console.error("Error deleting project:", error);
