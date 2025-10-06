@@ -1,6 +1,12 @@
 # Overview
 
-This is a modern full-stack web application built for property management (al2bolig). It features a React frontend with TypeScript, an Express.js backend, and a PostgreSQL database with Drizzle ORM. The application provides a comprehensive dashboard for managing properties, tenants, finances, and maintenance operations with support for Power BI integration for advanced analytics.
+This is a modern full-stack web application built for property management (al2bolig). It features a React frontend with TypeScript, an Express.js backend, and a PostgreSQL database with Drizzle ORM. The application provides three main sections:
+
+1. **Ledelsesfokus (Management Focus)** - Main landing page for project timeline and management overview
+2. **Power BI Rapporter** - Advanced analytics and reporting dashboards  
+3. **Indstillinger (Settings)** - Administration of organizational areas and settings
+
+The application is designed to provide leadership with a clear overview of organizational projects while maintaining access to analytical tools and administrative functions.
 
 # User Preferences
 
