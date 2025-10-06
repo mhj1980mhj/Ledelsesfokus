@@ -13,8 +13,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertPowerBIDashboardSchema } from "@shared/schema";
 import { z } from "zod";
-// import { apiRequest } from "@/lib/queryClient";
-// import PowerBIEmbed from "@/components/power-bi-embed";
+import Navigation from "@/components/navigation";
 import DashboardCard from "@/components/dashboard-card";
 import { useToast } from "@/hooks/use-toast";
 import logoImage from "@assets/ChatGPT Image 24. aug. 2025, 16.38.56_1756046355129.png";
@@ -805,6 +804,9 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
         </div>
       </div>
       </header>
+
+      {/* Navigation */}
+      <Navigation />
 
       {/* Main Content */}
       <main className="p-8">

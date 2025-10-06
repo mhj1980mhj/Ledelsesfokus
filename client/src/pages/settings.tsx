@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Plus, Settings as SettingsIcon } from "lucide-react";
+import Navigation from "@/components/navigation";
 import logoImage from "@assets/ChatGPT Image 24. aug. 2025, 16.38.56_1756046355129.png";
 
 interface SettingsProps {
@@ -25,6 +26,9 @@ export default function Settings({ onLogout }: SettingsProps) {
           </div>
         </div>
       </header>
+
+      {/* Navigation */}
+      <Navigation />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-8 py-8">
