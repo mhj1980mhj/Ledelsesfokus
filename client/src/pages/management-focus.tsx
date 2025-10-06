@@ -29,7 +29,7 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
   });
 
   const createProjectMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("/api/projects", "POST", data),
+    mutationFn: (data: any) => apiRequest("POST", "/api/projects", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       setIsProjectDialogOpen(false);
@@ -49,7 +49,7 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
 
   const updateProjectMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
-      apiRequest(`/api/projects/${id}`, "PUT", data),
+      apiRequest("PUT", `/api/projects/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       setIsProjectDialogOpen(false);
