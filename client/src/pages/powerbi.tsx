@@ -14,9 +14,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertPowerBIDashboardSchema } from "@shared/schema";
 import { z } from "zod";
 import Navigation from "@/components/navigation";
+import PageHeader from "@/components/page-header";
 import DashboardCard from "@/components/dashboard-card";
 import { useToast } from "@/hooks/use-toast";
-import logoImage from "@assets/ChatGPT Image 24. aug. 2025, 16.38.56_1756046355129.png";
 
 type PowerBIDashboard = {
   id: string;
@@ -462,34 +462,23 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-white/85 to-gray-50/85 backdrop-blur-xl border-b border-gray-200/50 sticky top-0 z-50">
-        <div className="px-8 py-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4">
-              <img src={logoImage} alt="AL2bolig Logo" className="w-12 h-12 object-contain" />
-              <div>
-                <h1 className="text-3xl font-bold text-gray-800" data-testid="page-title">
-                  Power BI Portal
-                </h1>
-                <p className="text-gray-600" data-testid="page-subtitle">
-                  Ledelsesoverblik
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button 
-                    size="sm"
-                    variant="ghost"
-                    className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                    data-testid="button-settings"
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </DialogTrigger>
+      <PageHeader title="Power BI Rapporter" subtitle="Analytiske dashboards" onLogout={onLogout} />
+      <Navigation />
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-8 py-8">
+        {/* Add Dashboard Button and Dialog */}
+        <div className="flex justify-end mb-8">
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                className="bg-[#9c9387] hover:bg-[#8a816d] text-white"
+                data-testid="button-add-dashboard"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Tilføj dashboard
+              </Button>
+            </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]" data-testid="dialog-add-dashboard">
                 <DialogHeader>
                   <DialogTitle>Tilføj nyt Power BI Dashboard</DialogTitle>
@@ -790,26 +779,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                 </Form>
               </DialogContent>
             </Dialog>
-            
-            <Button 
-              size="sm"
-              variant="outline"
-              onClick={onLogout}
-              className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
-              data-testid="button-logout"
-            >
-              Log ud
-            </Button>
-          </div>
         </div>
-      </div>
-      </header>
-
-      {/* Navigation */}
-      <Navigation />
-
-      {/* Main Content */}
-      <main className="p-8">
         {!isLoading && (
           <div className="mb-8">
             {/* Search and Sort Controls */}
