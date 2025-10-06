@@ -9,6 +9,7 @@ import Navigation from "@/components/navigation";
 import PageHeader from "@/components/page-header";
 import QuarterlyCalendar from "@/components/quarterly-calendar";
 import ProjectFormDialog from "@/components/project-form-dialog";
+import InitialsVerificationDialog from "@/components/initials-verification-dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Project } from "@shared/schema";
@@ -22,6 +23,9 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
   const [selectedArea, setSelectedArea] = useState<string>("all");
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [isVerificationDialogOpen, setIsVerificationDialogOpen] = useState(false);
+  const [verificationAction, setVerificationAction] = useState<"edit" | "delete">("edit");
+  const [projectForAction, setProjectForAction] = useState<Project | null>(null);
   const { toast } = useToast();
 
   const { data: projects = [], isLoading } = useQuery<Project[]>({
@@ -68,6 +72,24 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
     },
   });
 
+  const deleteProjectMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("DELETE", `/api/projects/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      toast({
+        title: "Projekt slettet",
+        description: "Projektet er blevet slettet succesfuldt.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Fejl",
+        description: "Kunne ikke slette projekt.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleProjectSubmit = (data: any) => {
     if (editingProject) {
       updateProjectMutation.mutate({ id: editingProject.id, data });
@@ -76,9 +98,25 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
     }
   };
 
-  const handleProjectClick = (project: Project) => {
-    setEditingProject(project);
-    setIsProjectDialogOpen(true);
+  const handleProjectClick = (project: Project, action: "edit" | "delete" = "edit") => {
+    setProjectForAction(project);
+    setVerificationAction(action);
+    setIsVerificationDialogOpen(true);
+  };
+
+  const handleVerification = (verified: boolean) => {
+    if (verified && projectForAction) {
+      if (verificationAction === "edit") {
+        setIsVerificationDialogOpen(false);
+        setEditingProject(projectForAction);
+        setIsProjectDialogOpen(true);
+        setProjectForAction(null);
+      } else if (verificationAction === "delete") {
+        deleteProjectMutation.mutate(projectForAction.id);
+        setIsVerificationDialogOpen(false);
+        setProjectForAction(null);
+      }
+    }
   };
 
   const handleCreateClick = () => {
@@ -220,6 +258,17 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
         project={editingProject}
         isPending={createProjectMutation.isPending || updateProjectMutation.isPending}
       />
+      
+      {projectForAction && (
+        <InitialsVerificationDialog
+          open={isVerificationDialogOpen}
+          onOpenChange={setIsVerificationDialogOpen}
+          onVerify={handleVerification}
+          expectedInitials={projectForAction.creatorInitials}
+          action={verificationAction}
+          projectName={projectForAction.name}
+        />
+      )}
     </div>
   );
 }

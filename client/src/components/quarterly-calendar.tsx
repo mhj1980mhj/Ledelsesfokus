@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Edit, Trash2 } from "lucide-react";
 import type { Project } from "@shared/schema";
 
 interface QuarterlyCalendarProps {
   projects: Project[];
-  onProjectClick?: (project: Project) => void;
+  onProjectClick?: (project: Project, action?: "edit" | "delete") => void;
 }
 
 const quarters = [
@@ -15,11 +15,11 @@ const quarters = [
   { id: "Q4", label: "Q4", months: "Oct-Dec", startMonth: 9, endMonth: 11 },
 ];
 
-const statusColors: Record<string, string> = {
-  planned: "bg-gray-400",
-  active: "bg-blue-500",
-  completed: "bg-green-500",
-  onhold: "bg-yellow-500",
+const statusLabels: Record<string, string> = {
+  planned: "Planlagt",
+  active: "Aktiv",
+  completed: "Afsluttet",
+  onhold: "På hold",
 };
 
 function getQuarterFromDate(date: string): number {
@@ -102,56 +102,71 @@ export default function QuarterlyCalendar({ projects, onProjectClick }: Quarterl
             projectsByYear.map(({ project, position }) => {
               if (!position) return null;
               
-              const color = statusColors[project.status] || "bg-gray-400";
               const gridColumnStart = position.startQuarter + 1;
               const gridColumnEnd = position.endQuarter + 2;
+              const statusLabel = statusLabels[project.status] || "Ukendt";
 
               return (
                 <div
                   key={project.id}
-                  className="grid grid-cols-4 gap-4"
+                  className="grid grid-cols-4 gap-4 group"
                   data-testid={`project-row-${project.id}`}
                 >
                   <div
-                    className={`col-span-${position.span} ${color} text-white rounded-lg p-3 cursor-pointer hover:opacity-90 transition-opacity`}
+                    className="text-white rounded-lg p-3 relative"
                     style={{
                       gridColumnStart,
                       gridColumnEnd,
+                      backgroundColor: project.color,
                     }}
-                    onClick={() => onProjectClick?.(project)}
                     data-testid={`project-bar-${project.id}`}
                   >
-                    <div className="font-medium truncate" data-testid="project-name">
-                      {project.name}
-                    </div>
-                    <div className="text-xs opacity-90 truncate" data-testid="project-owner">
-                      {project.owner}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate" data-testid="project-name">
+                          {project.name}
+                        </div>
+                        <div className="text-xs opacity-90 truncate" data-testid="project-owner">
+                          {project.owner}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded" data-testid="project-status">
+                          {statusLabel}
+                        </span>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0 hover:bg-white/20"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onProjectClick?.(project, "edit");
+                            }}
+                            data-testid={`button-edit-${project.id}`}
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0 hover:bg-white/20"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onProjectClick?.(project, "delete");
+                            }}
+                            data-testid={`button-delete-${project.id}`}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               );
             })
           )}
-        </div>
-      </div>
-
-      <div className="flex items-center gap-4 text-sm">
-        <span className="text-gray-600 font-medium">Status:</span>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-gray-400" />
-          <span className="text-gray-600">Planlagt</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-blue-500" />
-          <span className="text-gray-600">Aktiv</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-green-500" />
-          <span className="text-gray-600">Afsluttet</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-yellow-500" />
-          <span className="text-gray-600">På hold</span>
         </div>
       </div>
     </div>
