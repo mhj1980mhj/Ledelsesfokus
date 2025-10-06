@@ -2,6 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertProjectSchema } from "@shared/schema";
 import { z } from "zod";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,6 +22,8 @@ interface ProjectFormDialogProps {
 const projectFormSchema = insertProjectSchema.extend({
   startDate: z.string().min(1, "Start dato er påkrævet"),
   endDate: z.string().min(1, "Slut dato er påkrævet"),
+  creatorInitials: z.string().min(1, "Initialer er påkrævet").max(4, "Max 4 tegn"),
+  color: z.string().min(1, "Farve er påkrævet"),
 });
 
 export default function ProjectFormDialog({
@@ -33,14 +36,42 @@ export default function ProjectFormDialog({
   const form = useForm<z.infer<typeof projectFormSchema>>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
-      name: project?.name || "",
-      description: project?.description || "",
-      startDate: project?.startDate || "",
-      endDate: project?.endDate || "",
-      status: project?.status || "planned",
-      owner: project?.owner || "",
+      name: "",
+      description: "",
+      startDate: "",
+      endDate: "",
+      status: "planned",
+      owner: "",
+      creatorInitials: "",
+      color: "#3b82f6",
     },
   });
+
+  useEffect(() => {
+    if (project) {
+      form.reset({
+        name: project.name,
+        description: project.description || "",
+        startDate: project.startDate,
+        endDate: project.endDate,
+        status: project.status,
+        owner: project.owner,
+        creatorInitials: project.creatorInitials,
+        color: project.color,
+      });
+    } else {
+      form.reset({
+        name: "",
+        description: "",
+        startDate: "",
+        endDate: "",
+        status: "planned",
+        owner: "",
+        creatorInitials: "",
+        color: "#3b82f6",
+      });
+    }
+  }, [project, form]);
 
   const handleSubmit = (data: z.infer<typeof projectFormSchema>) => {
     onSubmit(data);
@@ -165,6 +196,57 @@ export default function ProjectFormDialog({
                 </FormItem>
               )}
             />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="creatorInitials"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Oprettet af (initialer)</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="fx. AB"
+                        {...field}
+                        maxLength={4}
+                        disabled={!!project}
+                        data-testid="input-creator-initials"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="color"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Projektfarve</FormLabel>
+                    <FormControl>
+                      <div className="flex gap-2">
+                        <Input
+                          type="color"
+                          {...field}
+                          className="w-16 h-10 p-1 cursor-pointer"
+                          data-testid="input-color"
+                        />
+                        <Input
+                          type="text"
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="#3b82f6"
+                          className="flex-1"
+                          data-testid="input-color-text"
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="flex justify-end gap-2 pt-4">
               <Button
