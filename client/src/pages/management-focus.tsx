@@ -26,6 +26,7 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
   const [isVerificationDialogOpen, setIsVerificationDialogOpen] = useState(false);
   const [verificationAction, setVerificationAction] = useState<"edit" | "delete">("edit");
   const [projectForAction, setProjectForAction] = useState<Project | null>(null);
+  const [verifiedInitials, setVerifiedInitials] = useState<string>("");
   const { toast } = useToast();
 
   const { data: projects = [], isLoading } = useQuery<Project[]>({
@@ -52,39 +53,44 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
   });
 
   const updateProjectMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
-      apiRequest("PUT", `/api/projects/${id}`, data),
+    mutationFn: ({ id, data, initials }: { id: string; data: any; initials: string }) =>
+      apiRequest("PUT", `/api/projects/${id}`, { ...data, verificationInitials: initials }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       setIsProjectDialogOpen(false);
       setEditingProject(null);
+      setVerifiedInitials("");
       toast({
         title: "Projekt opdateret",
         description: "Projektet er blevet opdateret succesfuldt.",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      const errorMessage = error.message || "Kunne ikke opdatere projekt.";
       toast({
         title: "Fejl",
-        description: "Kunne ikke opdatere projekt.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
   });
 
   const deleteProjectMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/projects/${id}`),
+    mutationFn: ({ id, initials }: { id: string; initials: string }) =>
+      apiRequest("DELETE", `/api/projects/${id}`, { verificationInitials: initials }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      setVerifiedInitials("");
       toast({
         title: "Projekt slettet",
         description: "Projektet er blevet slettet succesfuldt.",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      const errorMessage = error.message || "Kunne ikke slette projekt.";
       toast({
         title: "Fejl",
-        description: "Kunne ikke slette projekt.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -92,7 +98,7 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
 
   const handleProjectSubmit = (data: any) => {
     if (editingProject) {
-      updateProjectMutation.mutate({ id: editingProject.id, data });
+      updateProjectMutation.mutate({ id: editingProject.id, data, initials: verifiedInitials });
     } else {
       createProjectMutation.mutate(data);
     }
@@ -104,15 +110,16 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
     setIsVerificationDialogOpen(true);
   };
 
-  const handleVerification = (verified: boolean) => {
-    if (verified && projectForAction) {
+  const handleVerification = (verified: boolean, initials?: string) => {
+    if (verified && projectForAction && initials) {
+      setVerifiedInitials(initials);
       if (verificationAction === "edit") {
         setIsVerificationDialogOpen(false);
         setEditingProject(projectForAction);
         setIsProjectDialogOpen(true);
         setProjectForAction(null);
       } else if (verificationAction === "delete") {
-        deleteProjectMutation.mutate(projectForAction.id);
+        deleteProjectMutation.mutate({ id: projectForAction.id, initials });
         setIsVerificationDialogOpen(false);
         setProjectForAction(null);
       }

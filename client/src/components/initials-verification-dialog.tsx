@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 interface InitialsVerificationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onVerify: (verified: boolean) => void;
+  onVerify: (verified: boolean, initials?: string) => void;
   expectedInitials: string;
   action: "edit" | "delete";
   projectName: string;
@@ -27,7 +27,7 @@ export default function InitialsVerificationDialog({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (initials.toLowerCase() === expectedInitials.toLowerCase()) {
-      onVerify(true);
+      onVerify(true, initials);
       setInitials("");
       setError("");
     } else {
