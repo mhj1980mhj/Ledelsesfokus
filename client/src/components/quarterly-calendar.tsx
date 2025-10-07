@@ -1,11 +1,13 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Edit, Trash2 } from "lucide-react";
-import type { Project } from "@shared/schema";
+import { ChevronLeft, ChevronRight, Edit, Trash2, Plus } from "lucide-react";
+import type { Project, Segment } from "@shared/schema";
 
 interface QuarterlyCalendarProps {
   projects: Project[];
   onProjectClick?: (project: Project, action?: "edit" | "delete") => void;
+  onAddSegment?: (project: Project) => void;
 }
 
 const quarters = [
@@ -47,7 +49,42 @@ function getProjectPosition(project: Project, year: number) {
   };
 }
 
-export default function QuarterlyCalendar({ projects, onProjectClick }: QuarterlyCalendarProps) {
+function getSegmentPosition(segment: Segment, project: Project, year: number) {
+  const projectStart = new Date(project.startDate);
+  const projectEnd = new Date(project.endDate);
+  const segmentStart = new Date(segment.startDate);
+  const segmentEnd = new Date(segment.endDate);
+  
+  const segmentStartYear = segmentStart.getFullYear();
+  const segmentEndYear = segmentEnd.getFullYear();
+  
+  if (segmentEndYear < year || segmentStartYear > year) {
+    return null;
+  }
+  
+  const yearStart = new Date(year, 0, 1);
+  const yearEnd = new Date(year, 11, 31);
+  
+  const effectiveSegmentStart = segmentStartYear === year ? segmentStart : yearStart;
+  const effectiveSegmentEnd = segmentEndYear === year ? segmentEnd : yearEnd;
+  
+  const projectStartInYear = projectStart.getFullYear() === year ? projectStart : yearStart;
+  const projectEndInYear = projectEnd.getFullYear() === year ? projectEnd : yearEnd;
+  
+  const projectDuration = projectEndInYear.getTime() - projectStartInYear.getTime();
+  const segmentOffset = effectiveSegmentStart.getTime() - projectStartInYear.getTime();
+  const segmentDuration = effectiveSegmentEnd.getTime() - effectiveSegmentStart.getTime();
+  
+  const leftPercent = (segmentOffset / projectDuration) * 100;
+  const widthPercent = (segmentDuration / projectDuration) * 100;
+  
+  return {
+    left: `${Math.max(0, leftPercent)}%`,
+    width: `${Math.min(100 - Math.max(0, leftPercent), widthPercent)}%`,
+  };
+}
+
+export default function QuarterlyCalendar({ projects, onProjectClick, onAddSegment }: QuarterlyCalendarProps) {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
   const projectsByYear = projects
@@ -56,6 +93,25 @@ export default function QuarterlyCalendar({ projects, onProjectClick }: Quarterl
       position: getProjectPosition(project, currentYear),
     }))
     .filter((item) => item.position !== null);
+
+  const { data: allSegments = {} } = useQuery<Record<string, Segment[]>>({
+    queryKey: ['/api/segments', projects.map(p => p.id)],
+    queryFn: async () => {
+      const segmentsByProject: Record<string, Segment[]> = {};
+      await Promise.all(
+        projects.map(async (project) => {
+          const response = await fetch(`/api/projects/${project.id}/segments`);
+          if (response.ok) {
+            segmentsByProject[project.id] = await response.json();
+          } else {
+            segmentsByProject[project.id] = [];
+          }
+        })
+      );
+      return segmentsByProject;
+    },
+    enabled: projects.length > 0,
+  });
 
   return (
     <div className="space-y-6">
@@ -105,6 +161,7 @@ export default function QuarterlyCalendar({ projects, onProjectClick }: Quarterl
               const gridColumnStart = position.startQuarter + 1;
               const gridColumnEnd = position.endQuarter + 2;
               const statusLabel = statusLabels[project.status] || "Ukendt";
+              const projectSegments = allSegments[project.id] || [];
 
               return (
                 <div
@@ -113,7 +170,7 @@ export default function QuarterlyCalendar({ projects, onProjectClick }: Quarterl
                   data-testid={`project-row-${project.id}`}
                 >
                   <div
-                    className="text-white rounded-lg p-2 relative"
+                    className="text-white rounded-lg p-2 relative overflow-hidden"
                     style={{
                       gridColumnStart,
                       gridColumnEnd,
@@ -121,7 +178,28 @@ export default function QuarterlyCalendar({ projects, onProjectClick }: Quarterl
                     }}
                     data-testid={`project-bar-${project.id}`}
                   >
-                    <div className="flex items-center justify-between gap-2">
+                    {projectSegments.map((segment) => {
+                      const segmentPos = getSegmentPosition(segment, project, currentYear);
+                      if (!segmentPos) return null;
+                      return (
+                        <div
+                          key={segment.id}
+                          className="absolute top-0 bottom-0 bg-white/30 border-r-2 border-white/50"
+                          style={{
+                            left: segmentPos.left,
+                            width: segmentPos.width,
+                          }}
+                          data-testid={`segment-${segment.id}`}
+                        >
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-[10px] font-semibold truncate px-1">
+                              {segment.name}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div className="flex items-center justify-between gap-2 relative z-10">
                       <div className="flex-1 min-w-0">
                         <div className="font-medium truncate" data-testid="project-name">
                           {project.name}
@@ -135,6 +213,18 @@ export default function QuarterlyCalendar({ projects, onProjectClick }: Quarterl
                           {statusLabel}
                         </span>
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0 hover:bg-white/20"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onAddSegment?.(project);
+                            }}
+                            data-testid={`button-add-segment-${project.id}`}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
                           <Button
                             size="sm"
                             variant="ghost"
