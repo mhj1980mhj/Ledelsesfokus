@@ -93,7 +93,7 @@ export default function QuarterlyCalendar({ projects, onProjectClick }: Quarterl
           ))}
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           {projectsByYear.length === 0 ? (
             <div className="text-center py-12 text-gray-500" data-testid="text-no-projects">
               Ingen projekter for {currentYear}
@@ -113,7 +113,7 @@ export default function QuarterlyCalendar({ projects, onProjectClick }: Quarterl
                   data-testid={`project-row-${project.id}`}
                 >
                   <div
-                    className="text-white rounded-lg p-3 relative"
+                    className="text-white rounded-lg p-2 relative"
                     style={{
                       gridColumnStart,
                       gridColumnEnd,
