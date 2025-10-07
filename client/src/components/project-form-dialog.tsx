@@ -15,6 +15,7 @@ interface ProjectFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: z.infer<typeof projectFormSchema>) => void;
+  onDelete?: () => void;
   project?: Project | null;
   isPending?: boolean;
 }
@@ -30,6 +31,7 @@ export default function ProjectFormDialog({
   open,
   onOpenChange,
   onSubmit,
+  onDelete,
   project,
   isPending = false,
 }: ProjectFormDialogProps) {
@@ -248,18 +250,37 @@ export default function ProjectFormDialog({
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                data-testid="button-cancel"
-              >
-                Annuller
-              </Button>
-              <Button type="submit" disabled={isPending} data-testid="button-submit">
-                {isPending ? "Gemmer..." : project ? "Gem ændringer" : "Opret projekt"}
-              </Button>
+            <div className="flex justify-between items-center pt-4">
+              {project && onDelete ? (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => {
+                    if (confirm("Er du sikker på, at du vil slette dette projekt?")) {
+                      onDelete();
+                    }
+                  }}
+                  disabled={isPending}
+                  data-testid="button-delete-project"
+                >
+                  Slet projekt
+                </Button>
+              ) : (
+                <div />
+              )}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  data-testid="button-cancel"
+                >
+                  Annuller
+                </Button>
+                <Button type="submit" disabled={isPending} data-testid="button-submit">
+                  {isPending ? "Gemmer..." : project ? "Gem ændringer" : "Opret projekt"}
+                </Button>
+              </div>
             </div>
           </form>
         </Form>

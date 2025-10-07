@@ -13,7 +13,7 @@ import SegmentFormDialog from "@/components/segment-form-dialog";
 import InitialsVerificationDialog from "@/components/initials-verification-dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Project } from "@shared/schema";
+import type { Project, Segment } from "@shared/schema";
 
 interface ManagementFocusProps {
   onLogout: () => void;
@@ -30,6 +30,7 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
   const [verifiedInitials, setVerifiedInitials] = useState<string>("");
   const [isSegmentDialogOpen, setIsSegmentDialogOpen] = useState(false);
   const [projectForSegment, setProjectForSegment] = useState<Project | null>(null);
+  const [editingSegment, setEditingSegment] = useState<Segment | null>(null);
   const { toast } = useToast();
 
   const { data: projects = [], isLoading } = useQuery<Project[]>({
@@ -106,6 +107,7 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
       queryClient.invalidateQueries({ queryKey: ["/api/segments", projects.map(p => p.id)] });
       setIsSegmentDialogOpen(false);
       setProjectForSegment(null);
+      setEditingSegment(null);
       toast({
         title: "Segment oprettet",
         description: "Segmentet er blevet oprettet succesfuldt.",
@@ -113,6 +115,52 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
     },
     onError: (error: any) => {
       const errorMessage = error.message || "Kunne ikke oprette segment.";
+      toast({
+        title: "Fejl",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateSegmentMutation = useMutation({
+    mutationFn: ({ segmentId, projectId, data }: { segmentId: string; projectId: string; data: any }) =>
+      apiRequest("PUT", `/api/projects/${projectId}/segments/${segmentId}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/segments", projects.map(p => p.id)] });
+      setIsSegmentDialogOpen(false);
+      setProjectForSegment(null);
+      setEditingSegment(null);
+      toast({
+        title: "Segment opdateret",
+        description: "Segmentet er blevet opdateret succesfuldt.",
+      });
+    },
+    onError: (error: any) => {
+      const errorMessage = error.message || "Kunne ikke opdatere segment.";
+      toast({
+        title: "Fejl",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteSegmentMutation = useMutation({
+    mutationFn: ({ segmentId, projectId }: { segmentId: string; projectId: string }) =>
+      apiRequest("DELETE", `/api/projects/${projectId}/segments/${segmentId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/segments", projects.map(p => p.id)] });
+      setIsSegmentDialogOpen(false);
+      setProjectForSegment(null);
+      setEditingSegment(null);
+      toast({
+        title: "Segment slettet",
+        description: "Segmentet er blevet slettet succesfuldt.",
+      });
+    },
+    onError: (error: any) => {
+      const errorMessage = error.message || "Kunne ikke slette segment.";
       toast({
         title: "Fejl",
         description: errorMessage,
@@ -129,9 +177,9 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
     }
   };
 
-  const handleProjectClick = (project: Project, action: "edit" | "delete" = "edit") => {
+  const handleProjectClick = (project: Project) => {
     setProjectForAction(project);
-    setVerificationAction(action);
+    setVerificationAction("edit");
     setIsVerificationDialogOpen(true);
   };
 
@@ -158,12 +206,27 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
 
   const handleAddSegment = (project: Project) => {
     setProjectForSegment(project);
+    setEditingSegment(null);
+    setIsSegmentDialogOpen(true);
+  };
+
+  const handleSegmentClick = (segment: Segment, project: Project) => {
+    setEditingSegment(segment);
+    setProjectForSegment(project);
     setIsSegmentDialogOpen(true);
   };
 
   const handleSegmentSubmit = (data: any) => {
     if (projectForSegment) {
-      createSegmentMutation.mutate({ projectId: projectForSegment.id, data });
+      if (editingSegment) {
+        updateSegmentMutation.mutate({ 
+          segmentId: editingSegment.id, 
+          projectId: projectForSegment.id, 
+          data 
+        });
+      } else {
+        createSegmentMutation.mutate({ projectId: projectForSegment.id, data });
+      }
     }
   };
 
@@ -241,7 +304,7 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
               <QuarterlyCalendar 
                 projects={filteredProjects} 
                 onProjectClick={handleProjectClick}
-                onAddSegment={handleAddSegment}
+                onSegmentClick={handleSegmentClick}
               />
             )}
           </TabsContent>
@@ -302,16 +365,30 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
         open={isProjectDialogOpen}
         onOpenChange={setIsProjectDialogOpen}
         onSubmit={handleProjectSubmit}
+        onDelete={editingProject && verifiedInitials ? () => {
+          deleteProjectMutation.mutate({ 
+            id: editingProject.id, 
+            initials: verifiedInitials 
+          });
+          setIsProjectDialogOpen(false);
+        } : undefined}
         project={editingProject}
-        isPending={createProjectMutation.isPending || updateProjectMutation.isPending}
+        isPending={createProjectMutation.isPending || updateProjectMutation.isPending || deleteProjectMutation.isPending}
       />
 
       <SegmentFormDialog
         open={isSegmentDialogOpen}
         onOpenChange={setIsSegmentDialogOpen}
         onSubmit={handleSegmentSubmit}
+        onDelete={editingSegment && projectForSegment ? () => {
+          deleteSegmentMutation.mutate({ 
+            segmentId: editingSegment.id, 
+            projectId: projectForSegment.id 
+          });
+        } : undefined}
         project={projectForSegment}
-        isPending={createSegmentMutation.isPending}
+        segment={editingSegment}
+        isPending={createSegmentMutation.isPending || updateSegmentMutation.isPending || deleteSegmentMutation.isPending}
       />
       
       {projectForAction && (

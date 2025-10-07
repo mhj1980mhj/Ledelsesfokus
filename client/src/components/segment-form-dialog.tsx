@@ -14,6 +14,7 @@ interface SegmentFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: z.infer<typeof segmentFormSchema>) => void;
+  onDelete?: () => void;
   project: Project | null;
   segment?: Segment | null;
   isPending?: boolean;
@@ -29,6 +30,7 @@ export default function SegmentFormDialog({
   open,
   onOpenChange,
   onSubmit,
+  onDelete,
   project,
   segment,
   isPending = false,
@@ -178,24 +180,43 @@ export default function SegmentFormDialog({
               />
             </div>
 
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isPending}
-                data-testid="button-cancel"
-              >
-                Annuller
-              </Button>
-              <Button
-                type="submit"
-                className="bg-[#9c9387] hover:bg-[#8a816d]"
-                disabled={isPending}
-                data-testid="button-submit"
-              >
-                {isPending ? "Gemmer..." : segment ? "Opdater segment" : "Opret segment"}
-              </Button>
+            <div className="flex justify-between items-center pt-4">
+              {segment && onDelete ? (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => {
+                    if (confirm("Er du sikker på, at du vil slette dette segment?")) {
+                      onDelete();
+                    }
+                  }}
+                  disabled={isPending}
+                  data-testid="button-delete-segment"
+                >
+                  Slet segment
+                </Button>
+              ) : (
+                <div />
+              )}
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  disabled={isPending}
+                  data-testid="button-cancel"
+                >
+                  Annuller
+                </Button>
+                <Button
+                  type="submit"
+                  className="bg-[#9c9387] hover:bg-[#8a816d]"
+                  disabled={isPending}
+                  data-testid="button-submit"
+                >
+                  {isPending ? "Gemmer..." : segment ? "Opdater segment" : "Opret segment"}
+                </Button>
+              </div>
             </div>
           </form>
         </Form>

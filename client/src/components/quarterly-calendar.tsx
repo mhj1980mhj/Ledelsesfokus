@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Edit, Trash2, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Project, Segment } from "@shared/schema";
 
 interface QuarterlyCalendarProps {
   projects: Project[];
-  onProjectClick?: (project: Project, action?: "edit" | "delete") => void;
-  onAddSegment?: (project: Project) => void;
+  onProjectClick?: (project: Project) => void;
+  onSegmentClick?: (segment: Segment, project: Project) => void;
 }
 
 const quarters = [
@@ -87,7 +87,7 @@ function getSegmentPosition(segment: Segment, project: Project, year: number) {
   };
 }
 
-export default function QuarterlyCalendar({ projects, onProjectClick, onAddSegment }: QuarterlyCalendarProps) {
+export default function QuarterlyCalendar({ projects, onProjectClick, onSegmentClick }: QuarterlyCalendarProps) {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
   const projectsByYear = projects
@@ -169,15 +169,21 @@ export default function QuarterlyCalendar({ projects, onProjectClick, onAddSegme
               return (
                 <div
                   key={project.id}
-                  className="grid grid-cols-4 gap-4 group"
+                  className="grid grid-cols-4 gap-4"
                   data-testid={`project-row-${project.id}`}
                 >
                   <div
-                    className="text-white rounded-lg p-2 relative overflow-hidden"
+                    className="text-white rounded-lg px-3 py-1.5 relative overflow-hidden cursor-pointer transition-all hover:brightness-110 hover:shadow-md"
                     style={{
                       gridColumnStart,
                       gridColumnEnd,
                       backgroundColor: project.color,
+                    }}
+                    onClick={(e) => {
+                      const target = e.target as HTMLElement;
+                      if (!target.closest('[data-segment-id]')) {
+                        onProjectClick?.(project);
+                      }
                     }}
                     data-testid={`project-bar-${project.id}`}
                   >
@@ -187,74 +193,40 @@ export default function QuarterlyCalendar({ projects, onProjectClick, onAddSegme
                       return (
                         <div
                           key={segment.id}
-                          className="absolute top-0 bottom-0 bg-white/40 border-r-2 border-white"
+                          className="absolute top-0 bottom-0 bg-white/30 cursor-pointer transition-all hover:bg-white/40"
                           style={{
                             left: segmentPos.left,
                             width: segmentPos.width,
-                            borderLeft: index === 0 ? 'none' : '2px solid white',
+                            borderLeft: '3px solid white',
+                            borderRight: '3px solid white',
                           }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSegmentClick?.(segment, project);
+                          }}
+                          data-segment-id={segment.id}
                           data-testid={`segment-${segment.id}`}
                         >
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-[10px] font-bold truncate px-1 drop-shadow">
+                            <span className="text-[10px] font-bold truncate px-1 drop-shadow-lg">
                               {segment.name}
                             </span>
                           </div>
                         </div>
                       );
                     })}
-                    <div className="flex items-center justify-between gap-2 relative z-10">
+                    <div className="flex items-center justify-between gap-2 relative z-10 pointer-events-none">
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate" data-testid="project-name">
+                        <div className="font-medium truncate text-sm" data-testid="project-name">
                           {project.name}
                         </div>
-                        <div className="text-xs opacity-90 truncate" data-testid="project-owner">
+                        <div className="text-[10px] opacity-90 truncate" data-testid="project-owner">
                           {project.owner}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded" data-testid="project-status">
-                          {statusLabel}
-                        </span>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 w-7 p-0 hover:bg-white/20"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onAddSegment?.(project);
-                            }}
-                            data-testid={`button-add-segment-${project.id}`}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 w-7 p-0 hover:bg-white/20"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onProjectClick?.(project, "edit");
-                            }}
-                            data-testid={`button-edit-${project.id}`}
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 w-7 p-0 hover:bg-white/20"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onProjectClick?.(project, "delete");
-                            }}
-                            data-testid={`button-delete-${project.id}`}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
+                      <span className="text-[10px] font-medium px-2 py-0.5 bg-white/20 rounded" data-testid="project-status">
+                        {statusLabel}
+                      </span>
                     </div>
                   </div>
                 </div>
