@@ -25,6 +25,7 @@ export interface IStorage {
 
   // Segments
   getSegmentsByProject(projectId: string): Promise<Segment[]>;
+  getSegment(id: string): Promise<Segment | null>;
   createSegment(segment: InsertSegment): Promise<Segment>;
   updateSegment(id: string, segment: Partial<InsertSegment>): Promise<Segment | null>;
   deleteSegment(id: string): Promise<boolean>;
@@ -160,6 +161,11 @@ export class DatabaseStorage implements IStorage {
   async getSegmentsByProject(projectId: string): Promise<Segment[]> {
     const segmentList = await db.select().from(segments).where(eq(segments.projectId, projectId));
     return segmentList;
+  }
+
+  async getSegment(id: string): Promise<Segment | null> {
+    const [segment] = await db.select().from(segments).where(eq(segments.id, id));
+    return segment || null;
   }
 
   async createSegment(segment: InsertSegment): Promise<Segment> {

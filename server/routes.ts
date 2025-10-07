@@ -186,6 +186,20 @@ router.post("/api/projects/:projectId/segments", async (req: Request, res: Respo
       return res.status(400).json({ error: "Invalid segment data", details: validation.error });
     }
     
+    const existingSegments = await storage.getSegmentsByProject(projectId);
+    const newStart = new Date(validation.data.startDate).getTime();
+    const newEnd = new Date(validation.data.endDate).getTime();
+    
+    const hasOverlap = existingSegments.some(seg => {
+      const segStart = new Date(seg.startDate).getTime();
+      const segEnd = new Date(seg.endDate).getTime();
+      return (newStart < segEnd && newEnd > segStart);
+    });
+    
+    if (hasOverlap) {
+      return res.status(400).json({ error: "Segments cannot overlap in the same timeframe" });
+    }
+    
     const segment = await storage.createSegment(validation.data);
     res.status(201).json(segment);
   } catch (error) {
@@ -200,6 +214,29 @@ router.put("/api/segments/:id", async (req: Request, res: Response) => {
     const validation = insertSegmentSchema.partial().safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({ error: "Invalid segment data", details: validation.error });
+    }
+    
+    const currentSegment = await storage.getSegment(id);
+    if (!currentSegment) {
+      return res.status(404).json({ error: "Segment not found" });
+    }
+    
+    if (validation.data.startDate || validation.data.endDate) {
+      const projectId = validation.data.projectId || currentSegment.projectId;
+      const existingSegments = await storage.getSegmentsByProject(projectId);
+      const newStart = new Date(validation.data.startDate || currentSegment.startDate).getTime();
+      const newEnd = new Date(validation.data.endDate || currentSegment.endDate).getTime();
+      
+      const hasOverlap = existingSegments.some(seg => {
+        if (seg.id === id) return false;
+        const segStart = new Date(seg.startDate).getTime();
+        const segEnd = new Date(seg.endDate).getTime();
+        return (newStart < segEnd && newEnd > segStart);
+      });
+      
+      if (hasOverlap) {
+        return res.status(400).json({ error: "Segments cannot overlap in the same timeframe" });
+      }
     }
     
     const segment = await storage.updateSegment(id, validation.data);
