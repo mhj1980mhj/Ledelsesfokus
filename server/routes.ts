@@ -190,14 +190,23 @@ router.post("/api/projects/:projectId/segments", async (req: Request, res: Respo
     const newStart = new Date(validation.data.startDate).getTime();
     const newEnd = new Date(validation.data.endDate).getTime();
     
+    if (newStart >= newEnd) {
+      return res.status(400).json({ error: "Segment start date must be before end date" });
+    }
+    
     const hasOverlap = existingSegments.some(seg => {
       const segStart = new Date(seg.startDate).getTime();
       const segEnd = new Date(seg.endDate).getTime();
-      return (newStart < segEnd && newEnd > segStart);
+      // Allow adjacent segments where one ends exactly when another begins
+      // Overlap exists only when segments truly intersect, not just touch
+      const overlapsStart = newStart < segEnd && newStart >= segStart;
+      const overlapsEnd = newEnd > segStart && newEnd <= segEnd;
+      const contains = newStart <= segStart && newEnd >= segEnd;
+      return overlapsStart || overlapsEnd || contains;
     });
     
     if (hasOverlap) {
-      return res.status(400).json({ error: "Segments cannot overlap in the same timeframe" });
+      return res.status(400).json({ error: "Segmenter kan ikke overlappe samme tidsperiode" });
     }
     
     const segment = await storage.createSegment(validation.data);
@@ -227,15 +236,23 @@ router.put("/api/segments/:id", async (req: Request, res: Response) => {
       const newStart = new Date(validation.data.startDate || currentSegment.startDate).getTime();
       const newEnd = new Date(validation.data.endDate || currentSegment.endDate).getTime();
       
+      if (newStart >= newEnd) {
+        return res.status(400).json({ error: "Segment start date must be before end date" });
+      }
+      
       const hasOverlap = existingSegments.some(seg => {
         if (seg.id === id) return false;
         const segStart = new Date(seg.startDate).getTime();
         const segEnd = new Date(seg.endDate).getTime();
-        return (newStart < segEnd && newEnd > segStart);
+        // Allow adjacent segments where one ends exactly when another begins
+        const overlapsStart = newStart < segEnd && newStart >= segStart;
+        const overlapsEnd = newEnd > segStart && newEnd <= segEnd;
+        const contains = newStart <= segStart && newEnd >= segEnd;
+        return overlapsStart || overlapsEnd || contains;
       });
       
       if (hasOverlap) {
-        return res.status(400).json({ error: "Segments cannot overlap in the same timeframe" });
+        return res.status(400).json({ error: "Segmenter kan ikke overlappe samme tidsperiode" });
       }
     }
     

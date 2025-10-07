@@ -111,10 +111,11 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
         description: "Segmentet er blevet oprettet succesfuldt.",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      const errorMessage = error.message || "Kunne ikke oprette segment.";
       toast({
         title: "Fejl",
-        description: "Kunne ikke oprette segment.",
+        description: errorMessage,
         variant: "destructive",
       });
     },

@@ -3,6 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertSegmentSchema } from "@shared/schema";
 import { z } from "zod";
 import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -32,6 +33,17 @@ export default function SegmentFormDialog({
   segment,
   isPending = false,
 }: SegmentFormDialogProps) {
+  const { data: existingSegments = [] } = useQuery<Segment[]>({
+    queryKey: ['/api/projects', project?.id, 'segments'],
+    queryFn: async () => {
+      if (!project?.id) return [];
+      const response = await fetch(`/api/projects/${project.id}/segments`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!project?.id && open,
+  });
+
   const form = useForm<z.infer<typeof segmentFormSchema>>({
     resolver: zodResolver(segmentFormSchema),
     defaultValues: {
@@ -58,6 +70,44 @@ export default function SegmentFormDialog({
   }, [segment, project, form]);
 
   const handleSubmit = (data: z.infer<typeof segmentFormSchema>) => {
+    const newStart = new Date(data.startDate).getTime();
+    const newEnd = new Date(data.endDate).getTime();
+    
+    if (newStart >= newEnd) {
+      form.setError("startDate", { 
+        type: "manual", 
+        message: "Start dato skal være før slut dato" 
+      });
+      form.setError("endDate", { 
+        type: "manual", 
+        message: "Slut dato skal være efter start dato" 
+      });
+      return;
+    }
+    
+    const hasOverlap = existingSegments.some(seg => {
+      if (segment && seg.id === segment.id) return false;
+      const segStart = new Date(seg.startDate).getTime();
+      const segEnd = new Date(seg.endDate).getTime();
+      // Allow adjacent segments where one ends exactly when another begins
+      const overlapsStart = newStart < segEnd && newStart >= segStart;
+      const overlapsEnd = newEnd > segStart && newEnd <= segEnd;
+      const contains = newStart <= segStart && newEnd >= segEnd;
+      return overlapsStart || overlapsEnd || contains;
+    });
+    
+    if (hasOverlap) {
+      form.setError("startDate", { 
+        type: "manual", 
+        message: "Dette segment overlapper med et eksisterende segment" 
+      });
+      form.setError("endDate", { 
+        type: "manual", 
+        message: "Dette segment overlapper med et eksisterende segment" 
+      });
+      return;
+    }
+    
     onSubmit(data);
     form.reset();
   };
