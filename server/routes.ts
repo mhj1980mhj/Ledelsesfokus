@@ -1,5 +1,5 @@
 import { Request, Response, Router } from "express";
-import { insertPowerBIDashboardSchema, insertProjectSchema } from "@shared/schema";
+import { insertPowerBIDashboardSchema, insertProjectSchema, insertSegmentSchema } from "@shared/schema";
 import { storage } from "./storage";
 
 const router = Router();
@@ -163,6 +163,67 @@ router.delete("/api/projects/:id", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error deleting project:", error);
     res.status(500).json({ error: "Failed to delete project" });
+  }
+});
+
+// Segment Routes
+router.get("/api/projects/:projectId/segments", async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const segmentsList = await storage.getSegmentsByProject(projectId);
+    res.json(segmentsList);
+  } catch (error) {
+    console.error("Error fetching segments:", error);
+    res.status(500).json({ error: "Failed to fetch segments" });
+  }
+});
+
+router.post("/api/projects/:projectId/segments", async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const validation = insertSegmentSchema.safeParse({ ...req.body, projectId });
+    if (!validation.success) {
+      return res.status(400).json({ error: "Invalid segment data", details: validation.error });
+    }
+    
+    const segment = await storage.createSegment(validation.data);
+    res.status(201).json(segment);
+  } catch (error) {
+    console.error("Error creating segment:", error);
+    res.status(500).json({ error: "Failed to create segment" });
+  }
+});
+
+router.put("/api/segments/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const validation = insertSegmentSchema.partial().safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Invalid segment data", details: validation.error });
+    }
+    
+    const segment = await storage.updateSegment(id, validation.data);
+    if (!segment) {
+      return res.status(404).json({ error: "Segment not found" });
+    }
+    res.json(segment);
+  } catch (error) {
+    console.error("Error updating segment:", error);
+    res.status(500).json({ error: "Failed to update segment" });
+  }
+});
+
+router.delete("/api/segments/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const success = await storage.deleteSegment(id);
+    if (!success) {
+      return res.status(404).json({ error: "Segment not found" });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting segment:", error);
+    res.status(500).json({ error: "Failed to delete segment" });
   }
 });
 
