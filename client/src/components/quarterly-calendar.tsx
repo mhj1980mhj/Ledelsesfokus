@@ -181,21 +181,22 @@ export default function QuarterlyCalendar({ projects, onProjectClick, onAddSegme
                     }}
                     data-testid={`project-bar-${project.id}`}
                   >
-                    {projectSegments.map((segment) => {
+                    {projectSegments.map((segment, index) => {
                       const segmentPos = getSegmentPosition(segment, project, currentYear);
                       if (!segmentPos) return null;
                       return (
                         <div
                           key={segment.id}
-                          className="absolute top-0 bottom-0 bg-white/30 border-r-2 border-white/50"
+                          className="absolute top-0 bottom-0 bg-white/40 border-r-2 border-white"
                           style={{
                             left: segmentPos.left,
                             width: segmentPos.width,
+                            borderLeft: index === 0 ? 'none' : '2px solid white',
                           }}
                           data-testid={`segment-${segment.id}`}
                         >
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-[10px] font-semibold truncate px-1">
+                            <span className="text-[10px] font-bold truncate px-1 drop-shadow">
                               {segment.name}
                             </span>
                           </div>
