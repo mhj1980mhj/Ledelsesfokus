@@ -31,6 +31,14 @@ export const projects = pgTable("projects", {
   color: text("color").notNull().default("#3b82f6"),
 });
 
+export const segments = pgTable("segments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  startDate: text("start_date").notNull(),
+  endDate: text("end_date").notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -46,9 +54,15 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
   id: true,
 });
 
+export const insertSegmentSchema = createInsertSchema(segments).omit({
+  id: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertPowerBIDashboard = z.infer<typeof insertPowerBIDashboardSchema>;
 export type PowerBIDashboard = typeof powerBIDashboards.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 export type Project = typeof projects.$inferSelect;
+export type InsertSegment = z.infer<typeof insertSegmentSchema>;
+export type Segment = typeof segments.$inferSelect;
