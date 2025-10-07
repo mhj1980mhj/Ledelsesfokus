@@ -1,4 +1,4 @@
-import { User, InsertUser, PowerBIDashboard, InsertPowerBIDashboard, Project, InsertProject, users, powerBIDashboards, projects } from "@shared/schema";
+import { User, InsertUser, PowerBIDashboard, InsertPowerBIDashboard, Project, InsertProject, Segment, InsertSegment, users, powerBIDashboards, projects, segments } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -22,6 +22,12 @@ export interface IStorage {
   createProject(project: InsertProject): Promise<Project>;
   updateProject(id: string, project: Partial<InsertProject>): Promise<Project | null>;
   deleteProject(id: string): Promise<boolean>;
+
+  // Segments
+  getSegmentsByProject(projectId: string): Promise<Segment[]>;
+  createSegment(segment: InsertSegment): Promise<Segment>;
+  updateSegment(id: string, segment: Partial<InsertSegment>): Promise<Segment | null>;
+  deleteSegment(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -148,6 +154,33 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProject(id: string): Promise<boolean> {
     const result = await db.delete(projects).where(eq(projects.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getSegmentsByProject(projectId: string): Promise<Segment[]> {
+    const segmentList = await db.select().from(segments).where(eq(segments.projectId, projectId));
+    return segmentList;
+  }
+
+  async createSegment(segment: InsertSegment): Promise<Segment> {
+    const [newSegment] = await db
+      .insert(segments)
+      .values(segment)
+      .returning();
+    return newSegment;
+  }
+
+  async updateSegment(id: string, segment: Partial<InsertSegment>): Promise<Segment | null> {
+    const [updatedSegment] = await db
+      .update(segments)
+      .set(segment)
+      .where(eq(segments.id, id))
+      .returning();
+    return updatedSegment || null;
+  }
+
+  async deleteSegment(id: string): Promise<boolean> {
+    const result = await db.delete(segments).where(eq(segments.id, id));
     return (result.rowCount ?? 0) > 0;
   }
 }
