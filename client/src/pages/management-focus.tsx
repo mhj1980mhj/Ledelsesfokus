@@ -9,6 +9,7 @@ import Navigation from "@/components/navigation";
 import PageHeader from "@/components/page-header";
 import QuarterlyCalendar from "@/components/quarterly-calendar";
 import ProjectFormDialog from "@/components/project-form-dialog";
+import SegmentFormDialog from "@/components/segment-form-dialog";
 import InitialsVerificationDialog from "@/components/initials-verification-dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -27,6 +28,8 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
   const [verificationAction, setVerificationAction] = useState<"edit" | "delete">("edit");
   const [projectForAction, setProjectForAction] = useState<Project | null>(null);
   const [verifiedInitials, setVerifiedInitials] = useState<string>("");
+  const [isSegmentDialogOpen, setIsSegmentDialogOpen] = useState(false);
+  const [projectForSegment, setProjectForSegment] = useState<Project | null>(null);
   const { toast } = useToast();
 
   const { data: projects = [], isLoading } = useQuery<Project[]>({
@@ -96,6 +99,27 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
     },
   });
 
+  const createSegmentMutation = useMutation({
+    mutationFn: ({ projectId, data }: { projectId: string; data: any }) =>
+      apiRequest("POST", `/api/projects/${projectId}/segments`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/segments", projects.map(p => p.id)] });
+      setIsSegmentDialogOpen(false);
+      setProjectForSegment(null);
+      toast({
+        title: "Segment oprettet",
+        description: "Segmentet er blevet oprettet succesfuldt.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Fejl",
+        description: "Kunne ikke oprette segment.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleProjectSubmit = (data: any) => {
     if (editingProject) {
       updateProjectMutation.mutate({ id: editingProject.id, data, initials: verifiedInitials });
@@ -129,6 +153,17 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
   const handleCreateClick = () => {
     setEditingProject(null);
     setIsProjectDialogOpen(true);
+  };
+
+  const handleAddSegment = (project: Project) => {
+    setProjectForSegment(project);
+    setIsSegmentDialogOpen(true);
+  };
+
+  const handleSegmentSubmit = (data: any) => {
+    if (projectForSegment) {
+      createSegmentMutation.mutate({ projectId: projectForSegment.id, data });
+    }
   };
 
   const filteredProjects = projects.filter((project) => {
@@ -202,7 +237,11 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
                 </div>
               </div>
             ) : (
-              <QuarterlyCalendar projects={filteredProjects} onProjectClick={handleProjectClick} />
+              <QuarterlyCalendar 
+                projects={filteredProjects} 
+                onProjectClick={handleProjectClick}
+                onAddSegment={handleAddSegment}
+              />
             )}
           </TabsContent>
 
@@ -264,6 +303,14 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
         onSubmit={handleProjectSubmit}
         project={editingProject}
         isPending={createProjectMutation.isPending || updateProjectMutation.isPending}
+      />
+
+      <SegmentFormDialog
+        open={isSegmentDialogOpen}
+        onOpenChange={setIsSegmentDialogOpen}
+        onSubmit={handleSegmentSubmit}
+        project={projectForSegment}
+        isPending={createSegmentMutation.isPending}
       />
       
       {projectForAction && (

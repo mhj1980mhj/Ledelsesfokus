@@ -55,8 +55,11 @@ function getSegmentPosition(segment: Segment, project: Project, year: number) {
   const segmentStart = new Date(segment.startDate);
   const segmentEnd = new Date(segment.endDate);
   
-  const segmentStartYear = segmentStart.getFullYear();
-  const segmentEndYear = segmentEnd.getFullYear();
+  const clampedSegmentStart = new Date(Math.max(segmentStart.getTime(), projectStart.getTime()));
+  const clampedSegmentEnd = new Date(Math.min(segmentEnd.getTime(), projectEnd.getTime()));
+  
+  const segmentStartYear = clampedSegmentStart.getFullYear();
+  const segmentEndYear = clampedSegmentEnd.getFullYear();
   
   if (segmentEndYear < year || segmentStartYear > year) {
     return null;
@@ -65,8 +68,8 @@ function getSegmentPosition(segment: Segment, project: Project, year: number) {
   const yearStart = new Date(year, 0, 1);
   const yearEnd = new Date(year, 11, 31);
   
-  const effectiveSegmentStart = segmentStartYear === year ? segmentStart : yearStart;
-  const effectiveSegmentEnd = segmentEndYear === year ? segmentEnd : yearEnd;
+  const effectiveSegmentStart = segmentStartYear === year ? clampedSegmentStart : yearStart;
+  const effectiveSegmentEnd = segmentEndYear === year ? clampedSegmentEnd : yearEnd;
   
   const projectStartInYear = projectStart.getFullYear() === year ? projectStart : yearStart;
   const projectEndInYear = projectEnd.getFullYear() === year ? projectEnd : yearEnd;
