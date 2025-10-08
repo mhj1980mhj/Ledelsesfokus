@@ -1,19 +1,10 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Plus, Settings as SettingsIcon } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navigation from "@/components/navigation";
 import PageHeader from "@/components/page-header";
-import QuarterlyCalendar from "@/components/quarterly-calendar";
-import ProjectFormDialog from "@/components/project-form-dialog";
-import SegmentFormDialog from "@/components/segment-form-dialog";
-import InitialsVerificationDialog from "@/components/initials-verification-dialog";
-import { queryClient, apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import type { Project, Segment } from "@shared/schema";
 
 interface ManagementFocusProps {
   onLogout: () => void;
@@ -21,222 +12,6 @@ interface ManagementFocusProps {
 
 export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedArea, setSelectedArea] = useState<string>("all");
-  const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
-  const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [isVerificationDialogOpen, setIsVerificationDialogOpen] = useState(false);
-  const [verificationAction, setVerificationAction] = useState<"edit" | "delete">("edit");
-  const [projectForAction, setProjectForAction] = useState<Project | null>(null);
-  const [verifiedInitials, setVerifiedInitials] = useState<string>("");
-  const [isSegmentDialogOpen, setIsSegmentDialogOpen] = useState(false);
-  const [projectForSegment, setProjectForSegment] = useState<Project | null>(null);
-  const [editingSegment, setEditingSegment] = useState<Segment | null>(null);
-  const { toast } = useToast();
-
-  const { data: projects = [], isLoading } = useQuery<Project[]>({
-    queryKey: ["/api/projects"],
-  });
-
-  const createProjectMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/projects", data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
-      setIsProjectDialogOpen(false);
-      toast({
-        title: "Projekt oprettet",
-        description: "Dit projekt er blevet oprettet succesfuldt.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Fejl",
-        description: "Kunne ikke oprette projekt.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateProjectMutation = useMutation({
-    mutationFn: ({ id, data, initials }: { id: string; data: any; initials: string }) =>
-      apiRequest("PUT", `/api/projects/${id}`, { ...data, verificationInitials: initials }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
-      setIsProjectDialogOpen(false);
-      setEditingProject(null);
-      setVerifiedInitials("");
-      toast({
-        title: "Projekt opdateret",
-        description: "Projektet er blevet opdateret succesfuldt.",
-      });
-    },
-    onError: (error: any) => {
-      const errorMessage = error.message || "Kunne ikke opdatere projekt.";
-      toast({
-        title: "Fejl",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const deleteProjectMutation = useMutation({
-    mutationFn: ({ id, initials }: { id: string; initials: string }) =>
-      apiRequest("DELETE", `/api/projects/${id}`, { verificationInitials: initials }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
-      setVerifiedInitials("");
-      toast({
-        title: "Projekt slettet",
-        description: "Projektet er blevet slettet succesfuldt.",
-      });
-    },
-    onError: (error: any) => {
-      const errorMessage = error.message || "Kunne ikke slette projekt.";
-      toast({
-        title: "Fejl",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const createSegmentMutation = useMutation({
-    mutationFn: ({ projectId, data }: { projectId: string; data: any }) =>
-      apiRequest("POST", `/api/projects/${projectId}/segments`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/segments", projects.map(p => p.id)] });
-      setIsSegmentDialogOpen(false);
-      setProjectForSegment(null);
-      setEditingSegment(null);
-      toast({
-        title: "Segment oprettet",
-        description: "Segmentet er blevet oprettet succesfuldt.",
-      });
-    },
-    onError: (error: any) => {
-      const errorMessage = error.message || "Kunne ikke oprette segment.";
-      toast({
-        title: "Fejl",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateSegmentMutation = useMutation({
-    mutationFn: ({ segmentId, projectId, data }: { segmentId: string; projectId: string; data: any }) =>
-      apiRequest("PUT", `/api/projects/${projectId}/segments/${segmentId}`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/segments", projects.map(p => p.id)] });
-      setIsSegmentDialogOpen(false);
-      setProjectForSegment(null);
-      setEditingSegment(null);
-      toast({
-        title: "Segment opdateret",
-        description: "Segmentet er blevet opdateret succesfuldt.",
-      });
-    },
-    onError: (error: any) => {
-      const errorMessage = error.message || "Kunne ikke opdatere segment.";
-      toast({
-        title: "Fejl",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const deleteSegmentMutation = useMutation({
-    mutationFn: ({ segmentId, projectId }: { segmentId: string; projectId: string }) =>
-      apiRequest("DELETE", `/api/projects/${projectId}/segments/${segmentId}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/segments", projects.map(p => p.id)] });
-      setIsSegmentDialogOpen(false);
-      setProjectForSegment(null);
-      setEditingSegment(null);
-      toast({
-        title: "Segment slettet",
-        description: "Segmentet er blevet slettet succesfuldt.",
-      });
-    },
-    onError: (error: any) => {
-      const errorMessage = error.message || "Kunne ikke slette segment.";
-      toast({
-        title: "Fejl",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleProjectSubmit = (data: any) => {
-    if (editingProject) {
-      updateProjectMutation.mutate({ id: editingProject.id, data, initials: verifiedInitials });
-    } else {
-      createProjectMutation.mutate(data);
-    }
-  };
-
-  const handleProjectClick = (project: Project) => {
-    setProjectForAction(project);
-    setVerificationAction("edit");
-    setIsVerificationDialogOpen(true);
-  };
-
-  const handleVerification = (verified: boolean, initials?: string) => {
-    if (verified && projectForAction && initials) {
-      setVerifiedInitials(initials);
-      if (verificationAction === "edit") {
-        setIsVerificationDialogOpen(false);
-        setEditingProject(projectForAction);
-        setIsProjectDialogOpen(true);
-        setProjectForAction(null);
-      } else if (verificationAction === "delete") {
-        deleteProjectMutation.mutate({ id: projectForAction.id, initials });
-        setIsVerificationDialogOpen(false);
-        setProjectForAction(null);
-      }
-    }
-  };
-
-  const handleCreateClick = () => {
-    setEditingProject(null);
-    setIsProjectDialogOpen(true);
-  };
-
-  const handleAddSegment = (project: Project) => {
-    setProjectForSegment(project);
-    setEditingSegment(null);
-    setIsSegmentDialogOpen(true);
-  };
-
-  const handleSegmentClick = (segment: Segment, project: Project) => {
-    setEditingSegment(segment);
-    setProjectForSegment(project);
-    setIsSegmentDialogOpen(true);
-  };
-
-  const handleSegmentSubmit = (data: any) => {
-    if (projectForSegment) {
-      if (editingSegment) {
-        updateSegmentMutation.mutate({ 
-          segmentId: editingSegment.id, 
-          projectId: projectForSegment.id, 
-          data 
-        });
-      } else {
-        createSegmentMutation.mutate({ projectId: projectForSegment.id, data });
-      }
-    }
-  };
-
-  const filteredProjects = projects.filter((project) => {
-    const matchesSearch =
-      searchQuery === "" ||
-      project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.owner.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -271,7 +46,6 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
 
                 <Button
                   className="bg-[#9c9387] hover:bg-[#8a816d] text-white"
-                  onClick={handleCreateClick}
                   data-testid="button-create-project"
                 >
                   <Plus className="mr-2 h-4 w-4" />
@@ -280,33 +54,18 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
               </div>
             </div>
 
-            {isLoading ? (
-              <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-8 border border-gray-200/50 shadow-lg min-h-[500px] flex items-center justify-center">
-                <div className="text-gray-500">Indlæser projekter...</div>
-              </div>
-            ) : filteredProjects.length === 0 && searchQuery === "" ? (
-              <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-8 border border-gray-200/50 shadow-lg min-h-[500px]">
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Plus className="h-8 w-8 text-gray-400" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                      Ingen projekter endnu
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      Klik på "Opret projekt" for at tilføje dit første projekt til tidslinjen
-                    </p>
-                  </div>
+            <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-8 border border-gray-200/50 shadow-lg min-h-[500px]">
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                    Timeline funktionalitet fjernet
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Klar til redesign af projekttimeline
+                  </p>
                 </div>
               </div>
-            ) : (
-              <QuarterlyCalendar 
-                projects={filteredProjects} 
-                onProjectClick={handleProjectClick}
-                onSegmentClick={handleSegmentClick}
-              />
-            )}
+            </div>
           </TabsContent>
 
           <TabsContent value="omraader">
@@ -360,47 +119,6 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
           </TabsContent>
         </Tabs>
       </main>
-
-      <ProjectFormDialog
-        open={isProjectDialogOpen}
-        onOpenChange={setIsProjectDialogOpen}
-        onSubmit={handleProjectSubmit}
-        onDelete={editingProject && verifiedInitials ? () => {
-          deleteProjectMutation.mutate({ 
-            id: editingProject.id, 
-            initials: verifiedInitials 
-          });
-          setIsProjectDialogOpen(false);
-        } : undefined}
-        project={editingProject}
-        isPending={createProjectMutation.isPending || updateProjectMutation.isPending || deleteProjectMutation.isPending}
-      />
-
-      <SegmentFormDialog
-        open={isSegmentDialogOpen}
-        onOpenChange={setIsSegmentDialogOpen}
-        onSubmit={handleSegmentSubmit}
-        onDelete={editingSegment && projectForSegment ? () => {
-          deleteSegmentMutation.mutate({ 
-            segmentId: editingSegment.id, 
-            projectId: projectForSegment.id 
-          });
-        } : undefined}
-        project={projectForSegment}
-        segment={editingSegment}
-        isPending={createSegmentMutation.isPending || updateSegmentMutation.isPending || deleteSegmentMutation.isPending}
-      />
-      
-      {projectForAction && (
-        <InitialsVerificationDialog
-          open={isVerificationDialogOpen}
-          onOpenChange={setIsVerificationDialogOpen}
-          onVerify={handleVerification}
-          expectedInitials={projectForAction.creatorInitials}
-          action={verificationAction}
-          projectName={projectForAction.name}
-        />
-      )}
     </div>
   );
 }
