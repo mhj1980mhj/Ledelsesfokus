@@ -1,0 +1,503 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Plus, ChevronLeft, ChevronRight, Trash2, X, Calendar as CalendarIcon, GripVertical } from "lucide-react";
+
+// --- Helpers ---------------------------------------------------------------
+const MONTH_MS = 30 * 24 * 60 * 60 * 1000; // rough, we rely on Date for labels only
+const CELL_W = 56; // px per month cell
+const FIRST_COL_W = 260; // sidebar width so titles never overlap timeline
+const ROW_H = 44;
+const RADIUS = 12;
+
+function ymIndex(date = new Date()) {
+  const d = new Date(date);
+  return d.getFullYear() * 12 + d.getMonth();
+}
+
+function ymFromIndex(idx) {
+  const y = Math.floor(idx / 12);
+  const m = idx % 12;
+  return { y, m };
+}
+
+function ymLabel(idx) {
+  const { y, m } = ymFromIndex(idx);
+  const d = new Date(y, m, 1);
+  const fmt = new Intl.DateTimeFormat("da-DK", { month: "short", year: "numeric" });
+  return fmt.format(d).toLowerCase(); // e.g., "jan. 2025" (da-DK)
+}
+
+function clamp(n, a, b) {
+  return Math.max(a, Math.min(b, n));
+}
+
+function genId(prefix) {
+  return `${prefix}_${Math.random().toString(36).slice(2, 9)}`;
+}
+
+// Non-overlap enforcement: returns a clamped [start, end] for a segment within gaps
+function clampToGaps(segments, segId, start, end) {
+  const others = segments.filter(s => s.id !== segId).sort((a, b) => a.start - b.start);
+  let minStart = 0;
+  let maxEnd = Infinity;
+
+  for (let i = 0; i < others.length; i++) {
+    const s = others[i];
+    if (s.end < start) minStart = Math.max(minStart, s.end + 1);
+    if (s.start > end) {
+      maxEnd = Math.min(maxEnd, s.start - 1);
+      break;
+    }
+  }
+  const width = Math.max(0, end - start);
+  let sClamped = clamp(start, minStart, Math.max(minStart, maxEnd - width));
+  let eClamped = sClamped + width;
+  eClamped = Math.min(eClamped, maxEnd);
+  if (eClamped < sClamped) eClamped = sClamped; // fallback
+  return [sClamped, eClamped];
+}
+
+// --- UI Building Blocks ----------------------------------------------------
+function Modal({ open, onClose, children }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative max-h-[80vh] w-[min(720px,92vw)] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ModalHeader({ title, onClose }) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b px-5 py-3">
+      <div className="flex items-center gap-2 text-lg font-semibold">
+        <CalendarIcon className="h-5 w-5 opacity-60" /> {title}
+      </div>
+      <button onClick={onClose} className="rounded-full p-2 hover:bg-black/5"><X className="h-5 w-5" /></button>
+    </div>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <label className="flex flex-col gap-1 text-sm">
+      <span className="px-1 text-xs font-medium uppercase tracking-wide text-gray-500">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function ToolbarButton({ children, onClick, title }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className="rounded-xl border bg-white/90 px-3 py-2 text-sm shadow-sm transition hover:shadow-md active:scale-[0.98]"
+    >
+      {children}
+    </button>
+  );
+}
+
+// --- Main App --------------------------------------------------------------
+export default function App() {
+  const todayIdx = ymIndex(new Date());
+  const [startIdx, setStartIdx] = useState(todayIdx); // leftmost month index
+  const [visibleMonths, setVisibleMonths] = useState(14); // >=12
+
+  // Example projects
+  const [projects, setProjects] = useState(() => {
+    const p1 = {
+      id: genId("prj"),
+      name: "Website relaunch",
+      color: "#6366f1",
+      segments: [
+        { id: genId("seg"), label: "Design", start: todayIdx - 2, end: todayIdx + 1, description: "UI/UX design iteration, wireframes, and component library." },
+        { id: genId("seg"), label: "Build", start: todayIdx + 2, end: todayIdx + 5, description: "Frontend + CMS integration." },
+      ],
+    };
+    const p2 = {
+      id: genId("prj"),
+      name: "Mobile app",
+      color: "#22c55e",
+      segments: [
+        { id: genId("seg"), label: "MVP", start: todayIdx - 1, end: todayIdx + 4, description: "Core features, auth, offline queue." },
+        { id: genId("seg"), label: "Beta", start: todayIdx + 6, end: todayIdx + 9, description: "Testflight + feedback loop." },
+      ],
+    };
+    const p3 = {
+      id: genId("prj"),
+      name: "Data platform",
+      color: "#f59e0b",
+      segments: [
+        { id: genId("seg"), label: "Ingestion", start: todayIdx - 3, end: todayIdx - 1, description: "Pipelines, CDC." },
+        { id: genId("seg"), label: "Warehouse", start: todayIdx, end: todayIdx + 3, description: "Modeling + governance." },
+      ],
+    };
+    return [p1, p2, p3];
+  });
+
+  // --- Dialog state
+  const [projectDialog, setProjectDialog] = useState({ open: false, id: null, name: "", color: "#64748b" });
+  const [segmentDialog, setSegmentDialog] = useState({ open: false, projectId: null, id: null, label: "", start: todayIdx, end: todayIdx, description: "" });
+
+  // --- Tooltip state
+  const [tooltip, setTooltip] = useState({ show: false, x: 0, y: 0, content: null });
+
+  // --- Drag/Resize state
+  const [drag, setDrag] = useState(null); // {projectId, segId, mode, startMouseX, startSnapshot, endSnapshot}
+  const gridRef = useRef(null);
+
+  const months = useMemo(() => Array.from({ length: visibleMonths }, (_, i) => startIdx + i), [startIdx, visibleMonths]);
+  const totalW = months.length * CELL_W;
+
+  function idxToX(idx) {
+    return (idx - startIdx) * CELL_W;
+  }
+
+  function xToIdx(x) {
+    const raw = x / CELL_W + startIdx;
+    return Math.round(raw);
+  }
+
+  // --- Project actions
+  function openProjectEdit(prj) {
+    setProjectDialog({ open: true, id: prj.id, name: prj.name, color: prj.color });
+  }
+
+  function saveProject() {
+    setProjects(ps => ps.map(p => (p.id === projectDialog.id ? { ...p, name: projectDialog.name.trim() || p.name, color: projectDialog.color } : p)));
+    setProjectDialog({ ...projectDialog, open: false });
+  }
+
+  function deleteProject(id) {
+    setProjects(ps => ps.filter(p => p.id !== id));
+    setProjectDialog({ ...projectDialog, open: false });
+  }
+
+  function addProject() {
+    const np = { id: genId("prj"), name: "Nyt projekt", color: "#94a3b8", segments: [] };
+    setProjects(ps => [np, ...ps]);
+    openProjectEdit(np);
+  }
+
+  // --- Segment actions
+  function openSegmentEdit(prjId, seg) {
+    setSegmentDialog({ open: true, projectId: prjId, id: seg.id, label: seg.label, start: seg.start, end: seg.end, description: seg.description || "" });
+  }
+
+  function createSegment(prjId, defaults) {
+    const seg = { id: genId("seg"), label: defaults?.label ?? "Nyt segment", start: defaults?.start ?? todayIdx, end: defaults?.end ?? todayIdx, description: defaults?.description ?? "" };
+    setProjects(ps => ps.map(p => (p.id === prjId ? { ...p, segments: [...p.segments, seg].sort((a, b) => a.start - b.start) } : p)));
+    // open dialog immediately
+    setSegmentDialog({ open: true, projectId: prjId, id: seg.id, label: seg.label, start: seg.start, end: seg.end, description: seg.description });
+  }
+
+  function saveSegment() {
+    setProjects(ps => ps.map(p => {
+      if (p.id !== segmentDialog.projectId) return p;
+      const segs = p.segments.map(s => (s.id === segmentDialog.id ? { ...s, label: segmentDialog.label, start: Math.min(segmentDialog.start, segmentDialog.end), end: Math.max(segmentDialog.start, segmentDialog.end), description: segmentDialog.description } : s));
+      return { ...p, segments: segs.sort((a, b) => a.start - b.start) };
+    }));
+    setSegmentDialog({ ...segmentDialog, open: false });
+  }
+
+  function deleteSegment(prjId, segId) {
+    setProjects(ps => ps.map(p => (p.id === prjId ? { ...p, segments: p.segments.filter(s => s.id !== segId) } : p)));
+    setSegmentDialog({ ...segmentDialog, open: false });
+  }
+
+  // --- Dragging / Resizing -------------------------------------------------
+  function onSegmentMouseDown(e, prj, seg, mode) {
+    e.stopPropagation();
+    const bounds = gridRef.current.getBoundingClientRect();
+    const mouseX = e.clientX - bounds.left - FIRST_COL_W;
+    setDrag({ projectId: prj.id, segId: seg.id, mode, startMouseX: mouseX, startSnapshot: seg.start, endSnapshot: seg.end });
+    document.body.style.userSelect = "none";
+  }
+
+  function onMouseMove(e) {
+    if (!drag) return;
+    const bounds = gridRef.current.getBoundingClientRect();
+    const mouseX = e.clientX - bounds.left - FIRST_COL_W;
+    const dx = mouseX - drag.startMouseX;
+    const dIdx = Math.round(dx / CELL_W);
+
+    setProjects(ps => ps.map(p => {
+      if (p.id !== drag.projectId) return p;
+      const segs = p.segments.map(s => {
+        if (s.id !== drag.segId) return s;
+        let start = s.start;
+        let end = s.end;
+        if (drag.mode === "move") {
+          start = drag.startSnapshot + dIdx;
+          end = drag.endSnapshot + dIdx;
+        } else if (drag.mode === "resize-start") {
+          start = drag.startSnapshot + dIdx;
+          if (start > end) start = end; // don't invert
+        } else if (drag.mode === "resize-end") {
+          end = drag.endSnapshot + dIdx;
+          if (end < start) end = start;
+        }
+        // clamp within visible range loosely and enforce no-overlap
+        [start, end] = clampToGaps(p.segments, s.id, start, end);
+        return { ...s, start, end };
+      });
+      return { ...p, segments: segs.sort((a, b) => a.start - b.start) };
+    }));
+  }
+
+  function onMouseUp() {
+    if (drag) {
+      setDrag(null);
+      document.body.style.userSelect = "auto";
+    }
+  }
+
+  useEffect(() => {
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  });
+
+  // --- Tooltip helpers -----------------------------------------------------
+  function showSegTooltip(e, prj, seg) {
+    const content = (
+      <div className="max-w-[360px]">
+        <div className="mb-1 text-xs uppercase tracking-wide text-gray-500">{prj.name}</div>
+        <div className="font-medium">{seg.label}</div>
+        <div className="text-xs text-gray-500">{ymLabel(seg.start)} → {ymLabel(seg.end)}</div>
+        <div className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap text-sm leading-relaxed">{seg.description || "Ingen beskrivelse"}</div>
+      </div>
+    );
+    setTooltip({ show: true, x: e.clientX + 14, y: e.clientY + 14, content });
+  }
+  function moveTooltip(e) {
+    setTooltip(t => (t.show ? { ...t, x: e.clientX + 14, y: e.clientY + 14 } : t));
+  }
+  function hideTooltip() {
+    setTooltip({ show: false, x: 0, y: 0, content: null });
+  }
+
+  // --- Render --------------------------------------------------------------
+  return (
+    <div className="min-h-screen w-full bg-gradient-to-b from-slate-50 to-white text-slate-800">
+      <div className="mx-auto max-w-[1200px] px-4 py-8">
+        {/* Header */}
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="rounded-2xl bg-slate-900 px-3 py-1 text-sm text-white shadow-sm">Minimal Gantt</div>
+            <div className="text-sm text-slate-500">Sleek • Modern • Minimalist</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <ToolbarButton title="Tilføj projekt" onClick={addProject}><span className="inline-flex items-center gap-2"><Plus className="h-4 w-4"/>Nyt projekt</span></ToolbarButton>
+            <div className="ml-2 flex items-center gap-1 rounded-xl border bg-white/80 px-1 py-1 shadow-sm">
+              <button className="rounded-lg p-2 hover:bg-black/5" onClick={() => setStartIdx(s => s - 1)} title="Forrige måned"><ChevronLeft className="h-4 w-4"/></button>
+              <button className="rounded-lg px-3 py-1.5 text-sm hover:bg-black/5" onClick={() => setStartIdx(todayIdx)} title="Gå til i dag">I dag</button>
+              <button className="rounded-lg p-2 hover:bg-black/5" onClick={() => setStartIdx(s => s + 1)} title="Næste måned"><ChevronRight className="h-4 w-4"/></button>
+            </div>
+          </div>
+        </div>
+
+        {/* Grid header with boxed first column */}
+        <div ref={gridRef} className="overflow-x-auto rounded-2xl border bg-white shadow-sm">
+          <div className="sticky top-0 z-10 grid" style={{ gridTemplateColumns: `${FIRST_COL_W}px ${totalW}px` }}>
+            <div className="border-b bg-white px-4 py-2 text-sm font-medium">Projekter</div>
+            <div className="relative border-b bg-white/90">
+              <div className="flex">
+                {months.map((mIdx) => (
+                  <div key={mIdx} className="flex h-full w-[56px] items-center justify-center border-l text-xs text-slate-500 first:border-l-0">
+                    {ymLabel(mIdx)}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Body rows */}
+          <div className="grid" style={{ gridTemplateColumns: `${FIRST_COL_W}px ${totalW}px` }}>
+            {projects.map((prj) => (
+              <div key={prj.id} className="contents group">
+                {/* Sidebar cell - boxed so bars never overlap */}
+                <div className="relative border-t bg-white px-4 py-2">
+                  <div className="flex items-center gap-3">
+                    <span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: prj.color }} />
+                    <button
+                      className="truncate rounded-lg px-2 py-1 text-left text-sm hover:bg-black/5"
+                      onDoubleClick={() => openProjectEdit(prj)}
+                      title="Dobbeltklik for at redigere projekt"
+                    >
+                      {prj.name}
+                    </button>
+                  </div>
+                  {/* Elegant row + button (appears on hover) */}
+                  <button
+                    onClick={() => createSegment(prj.id)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 opacity-0 shadow-sm transition hover:scale-105 hover:bg-black/5 group-hover:opacity-100"
+                    title="Tilføj segment"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Timeline cell */}
+                <div className="relative border-t overflow-hidden">
+                  {/* grid lines */}
+                  <div className="pointer-events-none absolute inset-0 flex">
+                    {months.map((m, i) => (
+                      <div key={m} className="h-full w-[56px] border-l first:border-l-0" />
+                    ))}
+                  </div>
+
+                  {/* Segments on single line per project */}
+                  <div className="relative h-[44px]">
+                    {prj.segments.map((seg) => {
+                      const left = idxToX(seg.start);
+                      const width = Math.max(0, (seg.end - seg.start + 1) * CELL_W - 8); // inner padding
+                      // only render if intersects viewport
+                      const inView = left + width > -CELL_W && left < totalW + CELL_W;
+                      if (!inView) return null;
+                      return (
+                        <div
+                          key={seg.id}
+                          className="group/seg absolute top-1/2 -translate-y-1/2 select-none"
+                          style={{ left: left + 4, width }}
+                          onMouseMove={moveTooltip}
+                          onMouseEnter={(e) => showSegTooltip(e, prj, seg)}
+                          onMouseLeave={hideTooltip}
+                          onDoubleClick={() => openSegmentEdit(prj.id, seg)}
+                        >
+                          <div
+                            className="relative flex items-center overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/5 transition group-hover/seg:shadow-md"
+                            style={{ backgroundColor: prj.color }}
+                          >
+                            {/* drag handle (whole bar) */}
+                            <div
+                              className="flex-1 truncate px-3 py-2 text-sm/none text-white/90"
+                              onMouseDown={(e) => onSegmentMouseDown(e, prj, seg, "move")}
+                              title="Træk for at flytte"
+                            >
+                              <span className="inline-flex items-center gap-2"><GripVertical className="h-3.5 w-3.5 opacity-70"/>{seg.label}</span>
+                            </div>
+                            {/* Right hover + to create a new segment after this one */}
+                            <button
+                              className="absolute -right-2 top-1/2 hidden -translate-y-1/2 rounded-full border bg-white p-1 shadow-sm transition group-hover/seg:block hover:scale-105"
+                              onClick={() => createSegment(prj.id, { start: seg.end + 1, end: seg.end + 1 })}
+                              title="Nyt segment efter"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
+                            {/* Resize handles */}
+                            <div
+                              className="absolute left-0 top-0 h-full w-2 cursor-ew-resize"
+                              onMouseDown={(e) => onSegmentMouseDown(e, prj, seg, "resize-start")}
+                              title="Juster start"
+                            />
+                            <div
+                              className="absolute right-0 top-0 h-full w-2 cursor-ew-resize"
+                              onMouseDown={(e) => onSegmentMouseDown(e, prj, seg, "resize-end")}
+                              title="Juster slut"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tooltip */}
+        {tooltip.show && (
+          <div
+            className="pointer-events-none fixed z-[60] max-w-sm rounded-xl border bg-white/95 p-3 text-sm shadow-xl"
+            style={{ left: tooltip.x, top: tooltip.y }}
+          >
+            {tooltip.content}
+          </div>
+        )}
+      </div>
+
+      {/* Project Dialog */}
+      <Modal open={projectDialog.open} onClose={() => setProjectDialog(p => ({ ...p, open: false }))}>
+        <ModalHeader title="Projekt" onClose={() => setProjectDialog(p => ({ ...p, open: false }))} />
+        <div className="flex max-h-[70vh] flex-col gap-4 overflow-auto p-5">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Field label="Navn">
+              <input value={projectDialog.name} onChange={(e) => setProjectDialog({ ...projectDialog, name: e.target.value })} className="w-full rounded-xl border px-3 py-2 outline-none ring-0 focus:border-slate-400" />
+            </Field>
+            <Field label="Farve">
+              <input type="color" value={projectDialog.color} onChange={(e) => setProjectDialog({ ...projectDialog, color: e.target.value })} className="h-10 w-14 cursor-pointer rounded-xl border bg-white p-1" />
+            </Field>
+          </div>
+        </div>
+        <div className="flex items-center justify-between gap-3 border-t px-5 py-3">
+          <button onClick={() => deleteProject(projectDialog.id)} className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-red-600 hover:bg-red-100"><Trash2 className="h-4 w-4"/>Slet</button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setProjectDialog(p => ({ ...p, open: false }))} className="rounded-xl border bg-white px-3 py-2">Annuller</button>
+            <button onClick={saveProject} className="rounded-xl bg-slate-900 px-4 py-2 text-white shadow-sm hover:bg-slate-800">Gem</button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Segment Dialog */}
+      <Modal open={segmentDialog.open} onClose={() => setSegmentDialog(s => ({ ...s, open: false }))}>
+        <ModalHeader title="Segment" onClose={() => setSegmentDialog(s => ({ ...s, open: false }))} />
+        <div className="flex max-h-[72vh] flex-col gap-4 overflow-auto p-5">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Field label="Label">
+              <input value={segmentDialog.label} onChange={(e) => setSegmentDialog({ ...segmentDialog, label: e.target.value })} className="w-full rounded-xl border px-3 py-2 outline-none ring-0 focus:border-slate-400" />
+            </Field>
+            <Field label="Start måned">
+              <input
+                type="month"
+                value={() => {
+                  const { y, m } = ymFromIndex(segmentDialog.start);
+                  const pad = String(m + 1).padStart(2, "0");
+                  return `${y}-${pad}`;
+                }}
+                onChange={(e) => {
+                  const [y, mm] = e.target.value.split("-").map(Number);
+                  setSegmentDialog(s => ({ ...s, start: y * 12 + (mm - 1) }));
+                }}
+                className="w-full rounded-xl border px-3 py-2"
+              />
+            </Field>
+            <Field label="Slut måned">
+              <input
+                type="month"
+                value={() => {
+                  const { y, m } = ymFromIndex(segmentDialog.end);
+                  const pad = String(m + 1).padStart(2, "0");
+                  return `${y}-${pad}`;
+                }}
+                onChange={(e) => {
+                  const [y, mm] = e.target.value.split("-").map(Number);
+                  setSegmentDialog(s => ({ ...s, end: y * 12 + (mm - 1) }));
+                }}
+                className="w-full rounded-xl border px-3 py-2"
+              />
+            </Field>
+          </div>
+          <Field label="Beskrivelse">
+            <textarea value={segmentDialog.description} onChange={(e) => setSegmentDialog({ ...segmentDialog, description: e.target.value })} className="min-h-[120px] w-full resize-y rounded-xl border px-3 py-2 leading-relaxed" />
+          </Field>
+        </div>
+        <div className="flex items-center justify-between gap-3 border-t px-5 py-3">
+          <button onClick={() => deleteSegment(segmentDialog.projectId, segmentDialog.id)} className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-red-600 hover:bg-red-100"><Trash2 className="h-4 w-4"/>Slet</button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setSegmentDialog(s => ({ ...s, open: false }))} className="rounded-xl border bg-white px-3 py-2">Annuller</button>
+            <button onClick={saveSegment} className="rounded-xl bg-slate-900 px-4 py-2 text-white shadow-sm hover:bg-slate-800">Gem</button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}
