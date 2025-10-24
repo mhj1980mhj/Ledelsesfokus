@@ -24,6 +24,7 @@ export const projects = pgTable("projects", {
   name: text("name").notNull(),
   color: text("color").notNull().default("#9c9387"),
   area: text("area"),
+  position: integer("position").notNull().default(0),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
@@ -51,6 +52,7 @@ export const insertPowerBIDashboardSchema = createInsertSchema(powerBIDashboards
 export const insertProjectSchema = createInsertSchema(projects).omit({
   id: true,
   createdAt: true,
+  position: true,
 });
 
 export const insertSegmentSchema = createInsertSchema(segments).omit({

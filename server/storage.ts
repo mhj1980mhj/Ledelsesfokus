@@ -1,7 +1,7 @@
 import { User, InsertUser, PowerBIDashboard, InsertPowerBIDashboard, Project, InsertProject, Segment, InsertSegment, users, powerBIDashboards, projects, segments } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, desc, sql as drizzleSql } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -127,7 +127,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllProjects(): Promise<Project[]> {
-    const allProjects = await db.select().from(projects);
+    const allProjects = await db.select().from(projects).orderBy(projects.position);
     return allProjects;
   }
 
@@ -137,12 +137,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createProject(project: InsertProject): Promise<Project> {
+    // Get the maximum position to assign next position
+    const maxPositionResult = await db
+      .select({ maxPos: drizzleSql<number>`COALESCE(MAX(${projects.position}), -1)` })
+      .from(projects);
+    const nextPosition = (maxPositionResult[0]?.maxPos ?? -1) + 1;
+
     const [newProject] = await db
       .insert(projects)
       .values({
         name: project.name,
         color: project.color || "#9c9387",
         area: project.area || null,
+        position: nextPosition,
       })
       .returning();
     return newProject;
