@@ -1,4 +1,4 @@
-import { User, InsertUser, PowerBIDashboard, InsertPowerBIDashboard, users, powerBIDashboards } from "@shared/schema";
+import { User, InsertUser, PowerBIDashboard, InsertPowerBIDashboard, Project, InsertProject, Segment, InsertSegment, users, powerBIDashboards, projects, segments } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -15,6 +15,20 @@ export interface IStorage {
   createDashboard(dashboard: InsertPowerBIDashboard): Promise<PowerBIDashboard>;
   updateDashboard(id: string, dashboard: Partial<InsertPowerBIDashboard>): Promise<PowerBIDashboard | null>;
   deleteDashboard(id: string): Promise<boolean>;
+  
+  // Projects
+  getAllProjects(): Promise<Project[]>;
+  getProject(id: string): Promise<Project | null>;
+  createProject(project: InsertProject): Promise<Project>;
+  updateProject(id: string, project: Partial<InsertProject>): Promise<Project | null>;
+  deleteProject(id: string): Promise<boolean>;
+  
+  // Segments
+  getSegmentsByProject(projectId: string): Promise<Segment[]>;
+  getSegment(id: string): Promise<Segment | null>;
+  createSegment(segment: InsertSegment): Promise<Segment>;
+  updateSegment(id: string, segment: Partial<InsertSegment>): Promise<Segment | null>;
+  deleteSegment(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -109,6 +123,83 @@ export class DatabaseStorage implements IStorage {
       .update(powerBIDashboards)
       .set({ isActive: 0 })
       .where(eq(powerBIDashboards.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getAllProjects(): Promise<Project[]> {
+    const allProjects = await db.select().from(projects);
+    return allProjects;
+  }
+
+  async getProject(id: string): Promise<Project | null> {
+    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+    return project || null;
+  }
+
+  async createProject(project: InsertProject): Promise<Project> {
+    const [newProject] = await db
+      .insert(projects)
+      .values({
+        name: project.name,
+        color: project.color || "#9c9387",
+        area: project.area || null,
+      })
+      .returning();
+    return newProject;
+  }
+
+  async updateProject(id: string, project: Partial<InsertProject>): Promise<Project | null> {
+    const [updatedProject] = await db
+      .update(projects)
+      .set(project)
+      .where(eq(projects.id, id))
+      .returning();
+    return updatedProject || null;
+  }
+
+  async deleteProject(id: string): Promise<boolean> {
+    const result = await db.delete(projects).where(eq(projects.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getSegmentsByProject(projectId: string): Promise<Segment[]> {
+    const projectSegments = await db
+      .select()
+      .from(segments)
+      .where(eq(segments.projectId, projectId));
+    return projectSegments;
+  }
+
+  async getSegment(id: string): Promise<Segment | null> {
+    const [segment] = await db.select().from(segments).where(eq(segments.id, id));
+    return segment || null;
+  }
+
+  async createSegment(segment: InsertSegment): Promise<Segment> {
+    const [newSegment] = await db
+      .insert(segments)
+      .values({
+        projectId: segment.projectId,
+        label: segment.label,
+        startMonth: segment.startMonth,
+        endMonth: segment.endMonth,
+        description: segment.description || null,
+      })
+      .returning();
+    return newSegment;
+  }
+
+  async updateSegment(id: string, segment: Partial<InsertSegment>): Promise<Segment | null> {
+    const [updatedSegment] = await db
+      .update(segments)
+      .set(segment)
+      .where(eq(segments.id, id))
+      .returning();
+    return updatedSegment || null;
+  }
+
+  async deleteSegment(id: string): Promise<boolean> {
+    const result = await db.delete(segments).where(eq(segments.id, id));
     return (result.rowCount ?? 0) > 0;
   }
 }
