@@ -2,10 +2,18 @@
 
 This is a modern full-stack web application built for property management (al2bolig). It features a React frontend with TypeScript, an Express.js backend, and a PostgreSQL database with Drizzle ORM. The application provides two main sections:
 
-1. **Ledelsesfokus (Management Focus)** - Main landing page featuring Projekter (projects) and Områder (areas/settings) tabs
+1. **Ledelsesfokus (Management Focus)** - Main landing page featuring a database-backed project timeline management system with Gantt chart visualization. Supports project creation, time-based segments, drag-and-drop, search/filtering, and Danish interface with al2bolig's brown/beige color theme.
 2. **Power BI Rapporter** - Advanced analytics and reporting dashboards with management dashboard cards
 
 The application uses a consistent PageHeader component across all pages and a shared Navigation component for seamless navigation between sections. The application is designed to provide leadership with a clear overview of organizational projects while maintaining access to analytical tools and administrative functions.
+
+## Recent Changes (October 2025)
+- Built complete project timeline system with Gantt chart visualization
+- Implemented PostgreSQL-backed storage with projects and segments tables
+- Added drag-and-drop segment movement and resize functionality
+- Removed outdated "Områder" (Areas) tab - now shows simple "Projekter" heading
+- All CRUD operations use optimistic updates for responsive UX
+- Login credentials: username AL2bolig, password AL2bedst
 
 # User Preferences
 
@@ -37,7 +45,14 @@ Preferred communication style: Simple, everyday language.
 ## Data Models
 - **Users**: Authentication and user management
 - **Dashboard Stats**: Key performance indicators and metrics
+- **Projects**: Project management with color coding and area categorization
+- **Segments**: Time-based project segments with month indices for Gantt visualization
 - **Type Safety**: Zod schemas for runtime validation and TypeScript inference
+
+### Project Timeline Schema
+- Projects table: id (varchar), name, color, area
+- Segments table: id (varchar), project_id (FK), label, start_month (int), end_month (int), description
+- Month indexing: year * 12 + month (0-indexed) for precise timeline calculations
 
 ## Authentication & Storage
 - **Session Management**: connect-pg-simple for PostgreSQL-backed sessions
