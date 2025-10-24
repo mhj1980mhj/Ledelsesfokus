@@ -24,6 +24,7 @@ export const projects = pgTable("projects", {
   name: text("name").notNull(),
   color: text("color").notNull().default("#9c9387"),
   area: text("area"),
+  ansvarlig: varchar("ansvarlig", { length: 3 }).notNull(),
   position: integer("position").notNull().default(0),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
@@ -53,6 +54,8 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
   id: true,
   createdAt: true,
   position: true,
+}).extend({
+  ansvarlig: z.string().min(1, "Ansvarlig skal være mindst 1 tegn").max(3, "Ansvarlig må højst være 3 tegn"),
 });
 
 export const insertSegmentSchema = createInsertSchema(segments).omit({

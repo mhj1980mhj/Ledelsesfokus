@@ -89,10 +89,11 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 interface ProjectTimelineProps {
   searchQuery?: string;
   areaFilter?: string;
+  ansvarligFilter?: string;
   onProjectCreated?: () => void;
 }
 
-export default function ProjectTimeline({ searchQuery = "", areaFilter = "all" }: ProjectTimelineProps) {
+export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", ansvarligFilter = "all" }: ProjectTimelineProps) {
   const { toast } = useToast();
   const todayIdx = ymIndex(new Date());
   const [startIdx, setStartIdx] = useState(todayIdx);
@@ -102,7 +103,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all" }
     queryKey: ["/api/projects"],
   });
 
-  const [projectDialog, setProjectDialog] = useState({ open: false, id: null as string | null, name: "", color: "#9c9387", area: "" });
+  const [projectDialog, setProjectDialog] = useState({ open: false, id: null as string | null, name: "", color: "#9c9387", area: "", ansvarlig: "" });
   const [segmentDialog, setSegmentDialog] = useState({ open: false, projectId: null as string | null, id: null as string | null, label: "", start: todayIdx, end: todayIdx, description: "" });
   const [tooltip, setTooltip] = useState({ show: false, x: 0, y: 0, content: null as React.ReactNode | null });
   const [drag, setDrag] = useState(null as any);
@@ -271,16 +272,25 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all" }
   });
 
   function openProjectEdit(prj: any) {
-    setProjectDialog({ open: true, id: prj.id, name: prj.name, color: prj.color, area: prj.area || "" });
+    setProjectDialog({ open: true, id: prj.id, name: prj.name, color: prj.color, area: prj.area || "", ansvarlig: prj.ansvarlig || "" });
   }
 
   function saveProject() {
     if (!projectDialog.name.trim()) return;
+    if (!projectDialog.ansvarlig.trim()) {
+      toast({ title: "Fejl", description: "Ansvarlig skal udfyldes.", variant: "destructive" });
+      return;
+    }
+    if (projectDialog.ansvarlig.length > 3) {
+      toast({ title: "Fejl", description: "Ansvarlig må højst være 3 tegn.", variant: "destructive" });
+      return;
+    }
     
     const data = {
       name: projectDialog.name,
       color: projectDialog.color,
       area: projectDialog.area || null,
+      ansvarlig: projectDialog.ansvarlig,
     };
 
     if (projectDialog.id) {
@@ -297,7 +307,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all" }
   }
 
   function addProject() {
-    setProjectDialog({ open: true, id: null, name: "Nyt projekt", color: "#9c9387", area: "" });
+    setProjectDialog({ open: true, id: null, name: "Nyt projekt", color: "#9c9387", area: "", ansvarlig: "" });
   }
 
   function openSegmentEdit(prjId: string, seg: any) {
@@ -434,7 +444,8 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all" }
     const matchesSearch = prj.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       prj.segments.some((s: any) => s.label.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesArea = areaFilter === "all" || prj.area === areaFilter;
-    return matchesSearch && matchesArea;
+    const matchesAnsvarlig = ansvarligFilter === "all" || prj.ansvarlig === ansvarligFilter;
+    return matchesSearch && matchesArea && matchesAnsvarlig;
   });
 
   const renderContent = () => {
@@ -535,7 +546,12 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all" }
                       data-testid={`button-project-${prj.id}`}
                     >
                       {prj.name}
-                      {prj.area && <span className="ml-2 text-xs text-gray-400">({prj.area})</span>}
+                      <span className="ml-2 text-xs text-gray-400">
+                        {prj.area && `(${prj.area})`}
+                        {prj.area && prj.ansvarlig && " - "}
+                        {prj.ansvarlig && <span className="font-semibold text-gray-600">{prj.ansvarlig}</span>}
+                        {!prj.area && prj.ansvarlig && <span className="font-semibold text-gray-600">({prj.ansvarlig})</span>}
+                      </span>
                     </button>
                   </div>
                   <button
@@ -653,15 +669,27 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all" }
               />
             </Field>
           </div>
-          <Field label="Område (valgfrit)">
-            <input 
-              value={projectDialog.area} 
-              onChange={(e) => setProjectDialog({ ...projectDialog, area: e.target.value })} 
-              placeholder="F.eks. Sekretariat, Drift, IT" 
-              className="w-full rounded-xl border px-3 py-2 outline-none ring-0 focus:border-slate-400" 
-              data-testid="input-project-area"
-            />
-          </Field>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Field label="Område (valgfrit)">
+              <input 
+                value={projectDialog.area} 
+                onChange={(e) => setProjectDialog({ ...projectDialog, area: e.target.value })} 
+                placeholder="F.eks. Sekretariat, Drift, IT" 
+                className="w-full rounded-xl border px-3 py-2 outline-none ring-0 focus:border-slate-400" 
+                data-testid="input-project-area"
+              />
+            </Field>
+            <Field label="Ansvarlig">
+              <input 
+                value={projectDialog.ansvarlig} 
+                onChange={(e) => setProjectDialog({ ...projectDialog, ansvarlig: e.target.value.toUpperCase() })} 
+                placeholder="F.eks. M, MH, MHC" 
+                maxLength={3}
+                className="w-full rounded-xl border px-3 py-2 outline-none ring-0 focus:border-slate-400 uppercase" 
+                data-testid="input-project-ansvarlig"
+              />
+            </Field>
+          </div>
         </div>
         <div className="flex items-center justify-between gap-3 border-t px-5 py-3">
           {projectDialog.id && (

@@ -14,6 +14,7 @@ interface ManagementFocusProps {
 export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [areaFilter, setAreaFilter] = useState("all");
+  const [ansvarligFilter, setAnsvarligFilter] = useState("all");
 
   const { data: projects = [] } = useQuery<any[]>({
     queryKey: ["/api/projects"],
@@ -24,6 +25,13 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
       .map(p => p.area)
       .filter(area => area && area.trim() !== "");
     return Array.from(new Set(areas)).sort();
+  }, [projects]);
+
+  const uniqueAnsvarlige = useMemo(() => {
+    const ansvarlige = projects
+      .map(p => p.ansvarlig)
+      .filter(ansvarlig => ansvarlig && ansvarlig.trim() !== "");
+    return Array.from(new Set(ansvarlige)).sort();
   }, [projects]);
 
   return (
@@ -62,10 +70,24 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
                   ))}
                 </SelectContent>
               </Select>
+
+              <Select value={ansvarligFilter} onValueChange={setAnsvarligFilter}>
+                <SelectTrigger className="w-[200px]" data-testid="select-ansvarlig-filter">
+                  <SelectValue placeholder="Alle ansvarlige" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle ansvarlige</SelectItem>
+                  {uniqueAnsvarlige.map(ansvarlig => (
+                    <SelectItem key={ansvarlig} value={ansvarlig}>
+                      {ansvarlig}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          <ProjectTimeline searchQuery={searchQuery} areaFilter={areaFilter} />
+          <ProjectTimeline searchQuery={searchQuery} areaFilter={areaFilter} ansvarligFilter={ansvarligFilter} />
         </div>
       </main>
     </div>
