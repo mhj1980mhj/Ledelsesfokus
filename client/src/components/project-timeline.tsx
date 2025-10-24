@@ -116,74 +116,156 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all" }
 
   const createProjectMutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/projects", data),
+    onMutate: async (newProject) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/projects"] });
+      const previousProjects = queryClient.getQueryData(["/api/projects"]);
+      const optimisticProject = { id: `temp-${Date.now()}`, ...newProject, segments: [] };
+      queryClient.setQueryData(["/api/projects"], (old: any[] = []) => [...old, optimisticProject]);
+      return { previousProjects };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       setProjectDialog({ ...projectDialog, open: false });
       toast({ title: "Projekt oprettet", description: "Dit projekt er blevet oprettet succesfuldt." });
     },
-    onError: () => {
+    onError: (_error, _variables, context: any) => {
+      if (context?.previousProjects) {
+        queryClient.setQueryData(["/api/projects"], context.previousProjects);
+      }
       toast({ title: "Fejl", description: "Kunne ikke oprette projekt.", variant: "destructive" });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
     },
   });
 
   const updateProjectMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => apiRequest("PUT", `/api/projects/${id}`, data),
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/projects"] });
+      const previousProjects = queryClient.getQueryData(["/api/projects"]);
+      queryClient.setQueryData(["/api/projects"], (old: any[] = []) =>
+        old.map(p => p.id === id ? { ...p, ...data } : p)
+      );
+      return { previousProjects };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       setProjectDialog({ ...projectDialog, open: false });
       toast({ title: "Projekt opdateret", description: "Projektet er blevet opdateret succesfuldt." });
     },
-    onError: () => {
+    onError: (_error, _variables, context: any) => {
+      if (context?.previousProjects) {
+        queryClient.setQueryData(["/api/projects"], context.previousProjects);
+      }
       toast({ title: "Fejl", description: "Kunne ikke opdatere projekt.", variant: "destructive" });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
     },
   });
 
   const deleteProjectMutation = useMutation({
     mutationFn: (id: string) => apiRequest("DELETE", `/api/projects/${id}`),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/projects"] });
+      const previousProjects = queryClient.getQueryData(["/api/projects"]);
+      queryClient.setQueryData(["/api/projects"], (old: any[] = []) => old.filter(p => p.id !== id));
+      return { previousProjects };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       setProjectDialog({ ...projectDialog, open: false });
       toast({ title: "Projekt slettet", description: "Projektet er blevet slettet succesfuldt." });
     },
-    onError: () => {
+    onError: (_error, _variables, context: any) => {
+      if (context?.previousProjects) {
+        queryClient.setQueryData(["/api/projects"], context.previousProjects);
+      }
       toast({ title: "Fejl", description: "Kunne ikke slette projekt.", variant: "destructive" });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
     },
   });
 
   const createSegmentMutation = useMutation({
     mutationFn: ({ projectId, data }: { projectId: string; data: any }) =>
       apiRequest("POST", `/api/projects/${projectId}/segments`, data),
+    onMutate: async ({ projectId, data }) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/projects"] });
+      const previousProjects = queryClient.getQueryData(["/api/projects"]);
+      const optimisticSegment = { id: `temp-${Date.now()}`, ...data };
+      queryClient.setQueryData(["/api/projects"], (old: any[] = []) =>
+        old.map(p => p.id === projectId ? { ...p, segments: [...p.segments, optimisticSegment] } : p)
+      );
+      return { previousProjects };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       setSegmentDialog({ ...segmentDialog, open: false });
       toast({ title: "Segment oprettet", description: "Segmentet er blevet oprettet succesfuldt." });
     },
-    onError: (error: any) => {
+    onError: (error: any, _variables, context: any) => {
+      if (context?.previousProjects) {
+        queryClient.setQueryData(["/api/projects"], context.previousProjects);
+      }
       toast({ title: "Fejl", description: error.message || "Kunne ikke oprette segment.", variant: "destructive" });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
     },
   });
 
   const updateSegmentMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => apiRequest("PUT", `/api/segments/${id}`, data),
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/projects"] });
+      const previousProjects = queryClient.getQueryData(["/api/projects"]);
+      queryClient.setQueryData(["/api/projects"], (old: any[] = []) =>
+        old.map(p => ({
+          ...p,
+          segments: p.segments.map((s: any) => s.id === id ? { ...s, ...data } : s)
+        }))
+      );
+      return { previousProjects };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       setSegmentDialog({ ...segmentDialog, open: false });
       toast({ title: "Segment opdateret", description: "Segmentet er blevet opdateret succesfuldt." });
     },
-    onError: (error: any) => {
+    onError: (error: any, _variables, context: any) => {
+      if (context?.previousProjects) {
+        queryClient.setQueryData(["/api/projects"], context.previousProjects);
+      }
       toast({ title: "Fejl", description: error.message || "Kunne ikke opdatere segment.", variant: "destructive" });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
     },
   });
 
   const deleteSegmentMutation = useMutation({
     mutationFn: (id: string) => apiRequest("DELETE", `/api/segments/${id}`),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/projects"] });
+      const previousProjects = queryClient.getQueryData(["/api/projects"]);
+      queryClient.setQueryData(["/api/projects"], (old: any[] = []) =>
+        old.map(p => ({
+          ...p,
+          segments: p.segments.filter((s: any) => s.id !== id)
+        }))
+      );
+      return { previousProjects };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       setSegmentDialog({ ...segmentDialog, open: false });
       toast({ title: "Segment slettet", description: "Segmentet er blevet slettet succesfuldt." });
     },
-    onError: () => {
+    onError: (_error, _variables, context: any) => {
+      if (context?.previousProjects) {
+        queryClient.setQueryData(["/api/projects"], context.previousProjects);
+      }
       toast({ title: "Fejl", description: "Kunne ikke slette segment.", variant: "destructive" });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
     },
   });
 
@@ -354,39 +436,39 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all" }
     return matchesSearch && matchesArea;
   });
 
-  if (isLoading) {
-    return (
-      <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-8 border border-gray-200/50 shadow-lg min-h-[500px] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#9c9387] mx-auto mb-4"></div>
-          <p className="text-sm text-gray-500">Indlæser projekter...</p>
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-8 border border-gray-200/50 shadow-lg min-h-[500px] flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#9c9387] mx-auto mb-4"></div>
+            <p className="text-sm text-gray-500">Indlæser projekter...</p>
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  if (filteredProjects.length === 0 && !searchQuery && areaFilter === "all") {
-    return (
-      <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-8 border border-gray-200/50 shadow-lg min-h-[500px] flex items-center justify-center">
-        <div className="text-center">
-          <CalendarIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Ingen projekter endnu</h3>
-          <p className="text-sm text-gray-500 mb-6">Kom i gang ved at oprette dit første projekt</p>
-          <button
-            onClick={addProject}
-            className="bg-[#9c9387] hover:bg-[#8a816d] text-white px-6 py-3 rounded-xl transition shadow-sm"
-            data-testid="button-add-first-project"
-          >
-            <Plus className="inline mr-2 h-4 w-4" />
-            Opret projekt
-          </button>
+    if (filteredProjects.length === 0 && !searchQuery && areaFilter === "all") {
+      return (
+        <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-8 border border-gray-200/50 shadow-lg min-h-[500px] flex items-center justify-center">
+          <div className="text-center">
+            <CalendarIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">Ingen projekter endnu</h3>
+            <p className="text-sm text-gray-500 mb-6">Kom i gang ved at oprette dit første projekt</p>
+            <button
+              onClick={addProject}
+              className="bg-[#9c9387] hover:bg-[#8a816d] text-white px-6 py-3 rounded-xl transition shadow-sm"
+              data-testid="button-add-first-project"
+            >
+              <Plus className="inline mr-2 h-4 w-4" />
+              Opret projekt
+            </button>
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  return (
-    <>
+    return (
       <div className="bg-white/70 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
         <div className="border-b bg-white/90 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -532,6 +614,12 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all" }
           </div>
         </div>
       </div>
+    );
+  };
+
+  return (
+    <>
+      {renderContent()}
 
       {tooltip.show && (
         <div
