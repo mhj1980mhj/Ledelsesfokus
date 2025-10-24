@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import Navigation from "@/components/navigation";
 import PageHeader from "@/components/page-header";
 import ProjectTimeline from "@/components/project-timeline";
@@ -13,6 +14,17 @@ interface ManagementFocusProps {
 export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [areaFilter, setAreaFilter] = useState("all");
+
+  const { data: projects = [] } = useQuery<any[]>({
+    queryKey: ["/api/projects"],
+  });
+
+  const uniqueAreas = useMemo(() => {
+    const areas = projects
+      .map(p => p.area)
+      .filter(area => area && area.trim() !== "");
+    return Array.from(new Set(areas)).sort();
+  }, [projects]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -43,9 +55,11 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Alle områder</SelectItem>
-                  <SelectItem value="Sekretariat">Sekretariat</SelectItem>
-                  <SelectItem value="Drift">Drift</SelectItem>
-                  <SelectItem value="IT">IT</SelectItem>
+                  {uniqueAreas.map(area => (
+                    <SelectItem key={area} value={area}>
+                      {area}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
