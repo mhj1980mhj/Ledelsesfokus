@@ -1,5 +1,5 @@
 import { Request, Response, Router } from "express";
-import { insertPowerBIDashboardSchema } from "@shared/schema";
+import { insertPowerBIDashboardSchema, insertProjectSchema, insertSegmentSchema } from "@shared/schema";
 import { storage } from "./storage";
 
 const router = Router();
@@ -74,6 +74,199 @@ router.delete("/api/dashboards/:id", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error deleting dashboard:", error);
     res.status(500).json({ error: "Failed to delete dashboard" });
+  }
+});
+
+// Project Routes
+router.get("/api/projects", async (req: Request, res: Response) => {
+  try {
+    const projects = await storage.getAllProjects();
+    const projectsWithSegments = await Promise.all(
+      projects.map(async (project) => {
+        const segments = await storage.getSegmentsByProject(project.id);
+        return { ...project, segments };
+      })
+    );
+    res.json(projectsWithSegments);
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    res.status(500).json({ error: "Failed to fetch projects" });
+  }
+});
+
+router.get("/api/projects/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const project = await storage.getProject(id);
+    if (!project) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+    const segments = await storage.getSegmentsByProject(id);
+    res.json({ ...project, segments });
+  } catch (error) {
+    console.error("Error fetching project:", error);
+    res.status(500).json({ error: "Failed to fetch project" });
+  }
+});
+
+router.post("/api/projects", async (req: Request, res: Response) => {
+  try {
+    const validation = insertProjectSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Invalid project data", details: validation.error });
+    }
+    
+    const project = await storage.createProject(validation.data);
+    res.status(201).json({ ...project, segments: [] });
+  } catch (error) {
+    console.error("Error creating project:", error);
+    res.status(500).json({ error: "Failed to create project" });
+  }
+});
+
+router.put("/api/projects/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const validation = insertProjectSchema.partial().safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Invalid project data", details: validation.error });
+    }
+    
+    const project = await storage.updateProject(id, validation.data);
+    if (!project) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+    const segments = await storage.getSegmentsByProject(id);
+    res.json({ ...project, segments });
+  } catch (error) {
+    console.error("Error updating project:", error);
+    res.status(500).json({ error: "Failed to update project" });
+  }
+});
+
+router.delete("/api/projects/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const success = await storage.deleteProject(id);
+    if (!success) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting project:", error);
+    res.status(500).json({ error: "Failed to delete project" });
+  }
+});
+
+// Segment Routes
+router.get("/api/projects/:projectId/segments", async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const segments = await storage.getSegmentsByProject(projectId);
+    res.json(segments);
+  } catch (error) {
+    console.error("Error fetching segments:", error);
+    res.status(500).json({ error: "Failed to fetch segments" });
+  }
+});
+
+router.post("/api/projects/:projectId/segments", async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const validation = insertSegmentSchema.safeParse({ ...req.body, projectId });
+    if (!validation.success) {
+      return res.status(400).json({ error: "Invalid segment data", details: validation.error });
+    }
+    
+    const existingSegments = await storage.getSegmentsByProject(projectId);
+    const newStart = validation.data.startMonth;
+    const newEnd = validation.data.endMonth;
+    
+    if (newStart > newEnd) {
+      return res.status(400).json({ error: "Start month must be before or equal to end month" });
+    }
+    
+    const hasOverlap = existingSegments.some(seg => {
+      const segStart = seg.startMonth;
+      const segEnd = seg.endMonth;
+      const overlapsStart = newStart <= segEnd && newStart >= segStart;
+      const overlapsEnd = newEnd >= segStart && newEnd <= segEnd;
+      const contains = newStart <= segStart && newEnd >= segEnd;
+      return overlapsStart || overlapsEnd || contains;
+    });
+    
+    if (hasOverlap) {
+      return res.status(400).json({ error: "Segmenter kan ikke overlappe samme tidsperiode" });
+    }
+    
+    const segment = await storage.createSegment(validation.data);
+    res.status(201).json(segment);
+  } catch (error) {
+    console.error("Error creating segment:", error);
+    res.status(500).json({ error: "Failed to create segment" });
+  }
+});
+
+router.put("/api/segments/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const validation = insertSegmentSchema.partial().safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Invalid segment data", details: validation.error });
+    }
+    
+    const currentSegment = await storage.getSegment(id);
+    if (!currentSegment) {
+      return res.status(404).json({ error: "Segment not found" });
+    }
+    
+    if (validation.data.startMonth !== undefined || validation.data.endMonth !== undefined) {
+      const projectId = validation.data.projectId || currentSegment.projectId;
+      const existingSegments = await storage.getSegmentsByProject(projectId);
+      const newStart = validation.data.startMonth ?? currentSegment.startMonth;
+      const newEnd = validation.data.endMonth ?? currentSegment.endMonth;
+      
+      if (newStart > newEnd) {
+        return res.status(400).json({ error: "Start month must be before or equal to end month" });
+      }
+      
+      const hasOverlap = existingSegments.some(seg => {
+        if (seg.id === id) return false;
+        const segStart = seg.startMonth;
+        const segEnd = seg.endMonth;
+        const overlapsStart = newStart <= segEnd && newStart >= segStart;
+        const overlapsEnd = newEnd >= segStart && newEnd <= segEnd;
+        const contains = newStart <= segStart && newEnd >= segEnd;
+        return overlapsStart || overlapsEnd || contains;
+      });
+      
+      if (hasOverlap) {
+        return res.status(400).json({ error: "Segmenter kan ikke overlappe samme tidsperiode" });
+      }
+    }
+    
+    const segment = await storage.updateSegment(id, validation.data);
+    if (!segment) {
+      return res.status(404).json({ error: "Segment not found" });
+    }
+    res.json(segment);
+  } catch (error) {
+    console.error("Error updating segment:", error);
+    res.status(500).json({ error: "Failed to update segment" });
+  }
+});
+
+router.delete("/api/segments/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const success = await storage.deleteSegment(id);
+    if (!success) {
+      return res.status(404).json({ error: "Segment not found" });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting segment:", error);
+    res.status(500).json({ error: "Failed to delete segment" });
   }
 });
 
