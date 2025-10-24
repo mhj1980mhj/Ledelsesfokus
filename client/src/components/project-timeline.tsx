@@ -22,8 +22,9 @@ function ymFromIndex(idx: number) {
 function ymLabel(idx: number) {
   const { y, m } = ymFromIndex(idx);
   const d = new Date(y, m, 1);
-  const fmt = new Intl.DateTimeFormat("da-DK", { month: "short", year: "numeric" });
-  return fmt.format(d).toLowerCase();
+  const month = new Intl.DateTimeFormat("da-DK", { month: "short" }).format(d).toLowerCase().replace('.', '');
+  const year = y.toString().slice(-2);
+  return `${month} '${year}`;
 }
 
 function clamp(n: number, a: number, b: number) {
@@ -513,7 +514,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all" }
             <div className="relative border-b bg-white/90">
               <div className="flex">
                 {months.map((mIdx) => (
-                  <div key={mIdx} className="flex h-full w-[56px] items-center justify-center border-l text-xs text-slate-500 first:border-l-0">
+                  <div key={mIdx} className="flex h-full w-[56px] items-center justify-center border-l text-xs text-slate-600 font-medium first:border-l-0 whitespace-nowrap overflow-hidden">
                     {ymLabel(mIdx)}
                   </div>
                 ))}
