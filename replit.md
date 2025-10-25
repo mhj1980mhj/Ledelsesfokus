@@ -18,6 +18,7 @@ The application uses a consistent PageHeader component across all pages and a sh
 - Power BI Rapporter: Added search functionality (name/category/description) and category filter dropdown
 - Power BI Rapporter: Layout now matches Ledelsesfokus with white control block structure
 - **Timeline now displays in quarters (Q1-Q4)** instead of months for better overview while maintaining month-level data precision
+- **Timeline width is now fully responsive** - Dynamically adjusts number of visible quarters based on available container width using ResizeObserver, with minimum of 4 quarters
 - Login credentials: username AL2bolig, password AL2bedst
 
 # User Preferences
