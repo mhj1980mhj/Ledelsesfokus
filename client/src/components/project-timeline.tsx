@@ -240,7 +240,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
   });
 
   const updateSegmentMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => apiRequest("PUT", `/api/segments/${id}`, data),
+    mutationFn: ({ id, data, showToast }: { id: string; data: any; showToast?: boolean }) => apiRequest("PUT", `/api/segments/${id}`, data),
     onMutate: async ({ id, data }) => {
       await queryClient.cancelQueries({ queryKey: ["/api/projects"] });
       const previousProjects = queryClient.getQueryData(["/api/projects"]);
@@ -252,9 +252,11 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
       );
       return { previousProjects };
     },
-    onSuccess: () => {
-      setSegmentDialog({ ...segmentDialog, open: false });
-      toast({ title: "Segment opdateret", description: "Segmentet er blevet opdateret succesfuldt." });
+    onSuccess: (_data, variables) => {
+      if (variables.showToast) {
+        setSegmentDialog({ ...segmentDialog, open: false });
+        toast({ title: "Segment opdateret", description: "Segmentet er blevet opdateret succesfuldt." });
+      }
     },
     onError: (error: any, _variables, context: any) => {
       if (context?.previousProjects) {
@@ -370,7 +372,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
     };
 
     if (segmentDialog.id) {
-      updateSegmentMutation.mutate({ id: segmentDialog.id, data });
+      updateSegmentMutation.mutate({ id: segmentDialog.id, data, showToast: true });
     } else if (segmentDialog.projectId) {
       createSegmentMutation.mutate({ projectId: segmentDialog.projectId, data });
     }
@@ -424,6 +426,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
       updateSegmentMutation.mutate({
         id: segment.id,
         data: { startMonth: start, endMonth: end },
+        showToast: false,
       });
     }
   }
