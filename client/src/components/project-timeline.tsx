@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
-const CELL_W = 56;
+const CELL_W = 80;
 const FIRST_COL_W = 260;
 const ROW_H = 44;
 
@@ -17,6 +17,23 @@ function ymFromIndex(idx: number) {
   const y = Math.floor(idx / 12);
   const m = idx % 12;
   return { y, m };
+}
+
+function quarterIndex(date = new Date()) {
+  const d = new Date(date);
+  return d.getFullYear() * 4 + Math.floor(d.getMonth() / 3);
+}
+
+function quarterFromIndex(idx: number) {
+  const y = Math.floor(idx / 4);
+  const q = idx % 4;
+  return { y, q };
+}
+
+function quarterLabel(idx: number) {
+  const { y, q } = quarterFromIndex(idx);
+  const year = y.toString().slice(-2);
+  return `Q${q + 1} '${year}`;
 }
 
 function ymLabel(idx: number) {
@@ -96,8 +113,9 @@ interface ProjectTimelineProps {
 export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", ansvarligFilter = "all" }: ProjectTimelineProps) {
   const { toast } = useToast();
   const todayIdx = ymIndex(new Date());
-  const [startIdx, setStartIdx] = useState(todayIdx);
-  const [visibleMonths] = useState(14);
+  const todayQuarterIdx = quarterIndex(new Date());
+  const [startQuarterIdx, setStartQuarterIdx] = useState(todayQuarterIdx);
+  const [visibleQuarters] = useState(8);
 
   const { data: projects = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/projects"],
@@ -109,11 +127,17 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
   const [drag, setDrag] = useState(null as any);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  const months = useMemo(() => Array.from({ length: visibleMonths }, (_, i) => startIdx + i), [startIdx, visibleMonths]);
-  const totalW = months.length * CELL_W;
+  const quarters = useMemo(() => Array.from({ length: visibleQuarters }, (_, i) => startQuarterIdx + i), [startQuarterIdx, visibleQuarters]);
+  const totalW = quarters.length * CELL_W;
 
-  function idxToX(idx: number) {
-    return (idx - startIdx) * CELL_W;
+  const startMonthIdx = useMemo(() => {
+    const { y, q } = quarterFromIndex(startQuarterIdx);
+    return y * 12 + q * 3;
+  }, [startQuarterIdx]);
+
+  function monthIdxToX(monthIdx: number) {
+    const monthsFromStart = monthIdx - startMonthIdx;
+    return (monthsFromStart / 3) * CELL_W;
   }
 
   const createProjectMutation = useMutation({
@@ -372,7 +396,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
     const bounds = gridRef.current.getBoundingClientRect();
     const mouseX = e.clientX - bounds.left - FIRST_COL_W;
     const dx = mouseX - drag.startMouseX;
-    const dIdx = Math.round(dx / CELL_W);
+    const dMonths = Math.round((dx / CELL_W) * 3);
 
     const project = projects.find(p => p.id === drag.projectId);
     if (!project) return;
@@ -384,13 +408,13 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
     let end = segment.endMonth;
 
     if (drag.mode === "move") {
-      start = drag.startSnapshot + dIdx;
-      end = drag.endSnapshot + dIdx;
+      start = drag.startSnapshot + dMonths;
+      end = drag.endSnapshot + dMonths;
     } else if (drag.mode === "resize-start") {
-      start = drag.startSnapshot + dIdx;
+      start = drag.startSnapshot + dMonths;
       if (start > end) start = end;
     } else if (drag.mode === "resize-end") {
-      end = drag.endSnapshot + dIdx;
+      end = drag.endSnapshot + dMonths;
       if (end < start) end = start;
     }
 
@@ -421,10 +445,17 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
   });
 
   function showSegTooltip(e: React.MouseEvent, prj: any, seg: any) {
+    const startQuarter = quarterIndex(new Date(ymFromIndex(seg.startMonth).y, ymFromIndex(seg.startMonth).m, 1));
+    const endQuarter = quarterIndex(new Date(ymFromIndex(seg.endMonth).y, ymFromIndex(seg.endMonth).m, 1));
+    const quarterRange = startQuarter === endQuarter 
+      ? quarterLabel(startQuarter)
+      : `${quarterLabel(startQuarter)} → ${quarterLabel(endQuarter)}`;
+    
     const content = (
       <div className="max-w-[360px]">
         <div className="mb-1 text-xs uppercase tracking-wide text-gray-500">{prj.name}</div>
         <div className="font-medium">{seg.label}</div>
+        <div className="text-xs text-gray-600 font-medium">{quarterRange}</div>
         <div className="text-xs text-gray-500">{ymLabel(seg.startMonth)} → {ymLabel(seg.endMonth)}</div>
         <div className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap text-sm leading-relaxed">{seg.description || "Ingen beskrivelse"}</div>
       </div>
@@ -486,15 +517,15 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
           <div className="flex items-center gap-2">
             <button 
               className="rounded-lg p-2 hover:bg-black/5" 
-              onClick={() => setStartIdx(s => s - 1)} 
-              title="Forrige måned"
-              data-testid="button-prev-month"
+              onClick={() => setStartQuarterIdx(s => s - 1)} 
+              title="Forrige kvartal"
+              data-testid="button-prev-quarter"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button 
               className="rounded-lg px-3 py-1.5 text-sm hover:bg-black/5" 
-              onClick={() => setStartIdx(todayIdx)} 
+              onClick={() => setStartQuarterIdx(todayQuarterIdx)} 
               title="Gå til i dag"
               data-testid="button-today"
             >
@@ -502,9 +533,9 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
             </button>
             <button 
               className="rounded-lg p-2 hover:bg-black/5" 
-              onClick={() => setStartIdx(s => s + 1)} 
-              title="Næste måned"
-              data-testid="button-next-month"
+              onClick={() => setStartQuarterIdx(s => s + 1)} 
+              title="Næste kvartal"
+              data-testid="button-next-quarter"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -524,9 +555,9 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
             <div className="border-b bg-white px-4 py-2 text-sm font-medium">Projekter</div>
             <div className="relative border-b bg-white/90">
               <div className="flex">
-                {months.map((mIdx) => (
-                  <div key={mIdx} className="flex h-full w-[56px] items-center justify-center border-l text-xs text-slate-600 font-medium first:border-l-0 whitespace-nowrap overflow-hidden">
-                    {ymLabel(mIdx)}
+                {quarters.map((qIdx) => (
+                  <div key={qIdx} className="flex h-full items-center justify-center border-l text-xs text-slate-600 font-medium first:border-l-0 whitespace-nowrap overflow-hidden" style={{ width: `${CELL_W}px` }}>
+                    {quarterLabel(qIdx)}
                   </div>
                 ))}
               </div>
@@ -566,15 +597,16 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
 
                 <div className="relative border-t overflow-hidden">
                   <div className="pointer-events-none absolute inset-0 flex">
-                    {months.map((m) => (
-                      <div key={m} className="h-full w-[56px] border-l first:border-l-0" />
+                    {quarters.map((q) => (
+                      <div key={q} className="h-full border-l first:border-l-0" style={{ width: `${CELL_W}px` }} />
                     ))}
                   </div>
 
                   <div className="relative h-[44px]">
                     {prj.segments.map((seg: any) => {
-                      const left = idxToX(seg.startMonth);
-                      const width = Math.max(0, (seg.endMonth - seg.startMonth + 1) * CELL_W - 8);
+                      const left = monthIdxToX(seg.startMonth);
+                      const widthInMonths = seg.endMonth - seg.startMonth + 1;
+                      const width = Math.max(0, (widthInMonths / 3) * CELL_W - 8);
                       const inView = left + width > -CELL_W && left < totalW + CELL_W;
                       if (!inView) return null;
                       return (
