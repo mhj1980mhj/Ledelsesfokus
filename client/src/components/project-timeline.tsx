@@ -115,7 +115,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
   const todayIdx = ymIndex(new Date());
   const todayQuarterIdx = quarterIndex(new Date());
   const [startQuarterIdx, setStartQuarterIdx] = useState(todayQuarterIdx);
-  const [visibleQuarters] = useState(8);
+  const [visibleQuarters, setVisibleQuarters] = useState(8);
 
   const { data: projects = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/projects"],
@@ -126,6 +126,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
   const [tooltip, setTooltip] = useState({ show: false, x: 0, y: 0, content: null as React.ReactNode | null });
   const [drag, setDrag] = useState(null as any);
   const gridRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const quarters = useMemo(() => Array.from({ length: visibleQuarters }, (_, i) => startQuarterIdx + i), [startQuarterIdx, visibleQuarters]);
   const totalW = quarters.length * CELL_W;
@@ -447,6 +448,27 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
     };
   });
 
+  useEffect(() => {
+    const updateVisibleQuarters = () => {
+      if (!containerRef.current) return;
+      const containerWidth = containerRef.current.offsetWidth;
+      const availableWidth = containerWidth - FIRST_COL_W - 32;
+      const quarters = Math.max(4, Math.floor(availableWidth / CELL_W));
+      setVisibleQuarters(quarters);
+    };
+
+    updateVisibleQuarters();
+
+    if (!containerRef.current) return;
+
+    const resizeObserver = new ResizeObserver(updateVisibleQuarters);
+    resizeObserver.observe(containerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [projects, isLoading]);
+
   function showSegTooltip(e: React.MouseEvent, prj: any, seg: any) {
     const startQuarter = quarterIndex(new Date(ymFromIndex(seg.startMonth).y, ymFromIndex(seg.startMonth).m, 1));
     const endQuarter = quarterIndex(new Date(ymFromIndex(seg.endMonth).y, ymFromIndex(seg.endMonth).m, 1));
@@ -515,7 +537,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
     }
 
     return (
-      <div className="bg-white/70 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
+      <div ref={containerRef} className="bg-white/70 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
         <div className="border-b bg-white/90 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button 
