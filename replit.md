@@ -3,7 +3,7 @@
 This is a modern full-stack web application built for property management (al2bolig). It features a React frontend with TypeScript, an Express.js backend, and a PostgreSQL database with Drizzle ORM. The application provides two main sections:
 
 1. **Ledelsesfokus (Management Focus)** - Main landing page featuring a database-backed project timeline management system with Gantt chart visualization. Supports project creation, time-based segments, drag-and-drop, search/filtering, and Danish interface with al2bolig's brown/beige color theme.
-2. **Power BI Rapporter** - Advanced analytics and reporting dashboards with management dashboard cards
+2. **Power BI Rapporter** - Advanced analytics and reporting dashboards with search functionality, category filtering, and management dashboard cards. Layout matches Ledelsesfokus structure for consistent user experience.
 
 The application uses a consistent PageHeader component across all pages and a shared Navigation component for seamless navigation between sections. The application is designed to provide leadership with a clear overview of organizational projects while maintaining access to analytical tools and administrative functions.
 
@@ -13,6 +13,10 @@ The application uses a consistent PageHeader component across all pages and a sh
 - Added drag-and-drop segment movement and resize functionality
 - Removed outdated "Områder" (Areas) tab - now shows simple "Projekter" heading
 - All CRUD operations use optimistic updates for responsive UX
+- Added "Ansvarlig" (responsible person) field to projects with 1-3 character validation, filtering, and display
+- Standardized layout between Ledelsesfokus and Power BI Rapporter pages for consistent UX
+- Power BI Rapporter: Added search functionality (name/category/description) and category filter dropdown
+- Power BI Rapporter: Layout now matches Ledelsesfokus with white control block structure
 - Login credentials: username AL2bolig, password AL2bedst
 
 # User Preferences
