@@ -520,20 +520,17 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                   <SelectItem value="alphabetical">Alfabetisk</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-          </div>
 
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button 
-                className="bg-[#9c9387] hover:bg-[#8a816d] text-white"
-                data-testid="button-add-dashboard"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Tilføj dashboard
-              </Button>
-            </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]" data-testid="dialog-add-dashboard">
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button 
+                    className="bg-[#9c9387] hover:bg-[#8a816d] text-white h-10 w-10 p-0"
+                    data-testid="button-add-dashboard"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px]" data-testid="dialog-add-dashboard">
                 <DialogHeader>
                   <DialogTitle>Tilføj nyt Power BI Dashboard</DialogTitle>
                 </DialogHeader>
@@ -679,8 +676,10 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                 </Form>
               </DialogContent>
             </Dialog>
+            </div>
+          </div>
 
-            {/* Edit Dashboard Dialog */}
+          {/* Edit Dashboard Dialog */}
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
               <DialogContent className="sm:max-w-md" data-testid="edit-dialog">
                 <DialogHeader>
