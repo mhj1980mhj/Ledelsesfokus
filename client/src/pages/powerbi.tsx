@@ -39,6 +39,8 @@ interface PowerBIProps {
 }
 
 export default function PowerBI({ onLogout }: PowerBIProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [sortBy, setSortBy] = useState<SortOption>("latest");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -74,6 +76,13 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
   });
 
   // Get unique categories from existing dashboards
+  const uniqueCategories = useMemo(() => {
+    const categories = dashboards
+      .map(d => d.category)
+      .filter(category => category && category.trim() !== "");
+    return Array.from(new Set(categories)).sort();
+  }, [dashboards]);
+
   const existingCategories = useMemo(() => {
     const categories = dashboards.map(dashboard => dashboard.category).filter(Boolean);
     return Array.from(new Set(categories)).sort();
@@ -172,7 +181,16 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
   };
 
   const filteredAndSortedDashboards = useMemo(() => {
-    let filtered = [...dashboards];
+    let filtered = dashboards.filter(dashboard => {
+      const matchesSearch = 
+        dashboard.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        dashboard.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (dashboard.description && dashboard.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      const matchesCategory = categoryFilter === "all" || dashboard.category === categoryFilter;
+      
+      return matchesSearch && matchesCategory;
+    });
 
     if (sortBy === "alphabetical") {
       filtered.sort((a, b) => a.name.localeCompare(b.name, "da"));
@@ -181,7 +199,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
     }
 
     return filtered;
-  }, [dashboards, sortBy]);
+  }, [dashboards, searchQuery, categoryFilter, sortBy]);
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     createDashboardMutation.mutate(data);
@@ -467,6 +485,32 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
           
           <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-4 border border-gray-200/50 shadow-lg">
             <div className="flex items-center gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  type="text"
+                  placeholder="Søg efter dashboard navn, kategori eller beskrivelse..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                  data-testid="input-search"
+                />
+              </div>
+
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-[200px]" data-testid="select-category-filter">
+                  <SelectValue placeholder="Alle kategorier" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle kategorier</SelectItem>
+                  {uniqueCategories.map(category => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
               <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
                 <SelectTrigger className="w-[200px]" data-testid="select-sort">
                   <SelectValue placeholder="Sortering" />
@@ -476,19 +520,19 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                   <SelectItem value="alphabetical">Alfabetisk</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
 
-              <div className="flex-1"></div>
-
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button 
-                    className="bg-[#9c9387] hover:bg-[#8a816d] text-white"
-                    data-testid="button-add-dashboard"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Tilføj dashboard
-                  </Button>
-                </DialogTrigger>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                className="bg-[#9c9387] hover:bg-[#8a816d] text-white"
+                data-testid="button-add-dashboard"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Tilføj dashboard
+              </Button>
+            </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]" data-testid="dialog-add-dashboard">
                 <DialogHeader>
                   <DialogTitle>Tilføj nyt Power BI Dashboard</DialogTitle>
@@ -789,8 +833,6 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                 </Form>
               </DialogContent>
             </Dialog>
-            </div>
-          </div>
 
         {isLoading ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
