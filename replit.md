@@ -2,7 +2,7 @@
 
 This is a modern full-stack web application built for property management (al2bolig). It features a React frontend with TypeScript, an Express.js backend, and a PostgreSQL database with Drizzle ORM. The application provides two main sections:
 
-1. **Ledelsesfokus (Management Focus)** - Main landing page featuring a database-backed project timeline management system with Gantt chart visualization. Supports project creation, time-based segments, drag-and-drop, search/filtering, and Danish interface with al2bolig's brown/beige color theme.
+1. **Ledelsesfokus (Management Focus)** - Main landing page featuring a database-backed project timeline management system with quarter-based Gantt chart visualization. Supports project creation, time-based segments, drag-and-drop, search/filtering, and Danish interface with al2bolig's brown/beige color theme. Timeline displays quarters (Q1-Q4) for better overview while storing data at month-level precision.
 2. **Power BI Rapporter** - Advanced analytics and reporting dashboards with search functionality, category filtering, and management dashboard cards. Layout matches Ledelsesfokus structure for consistent user experience.
 
 The application uses a consistent PageHeader component across all pages and a shared Navigation component for seamless navigation between sections. The application is designed to provide leadership with a clear overview of organizational projects while maintaining access to analytical tools and administrative functions.
@@ -17,6 +17,7 @@ The application uses a consistent PageHeader component across all pages and a sh
 - Standardized layout between Ledelsesfokus and Power BI Rapporter pages for consistent UX
 - Power BI Rapporter: Added search functionality (name/category/description) and category filter dropdown
 - Power BI Rapporter: Layout now matches Ledelsesfokus with white control block structure
+- **Timeline now displays in quarters (Q1-Q4)** instead of months for better overview while maintaining month-level data precision
 - Login credentials: username AL2bolig, password AL2bedst
 
 # User Preferences
@@ -54,9 +55,12 @@ Preferred communication style: Simple, everyday language.
 - **Type Safety**: Zod schemas for runtime validation and TypeScript inference
 
 ### Project Timeline Schema
-- Projects table: id (varchar), name, color, area
+- Projects table: id (varchar), name, color, area, ansvarlig
 - Segments table: id (varchar), project_id (FK), label, start_month (int), end_month (int), description
 - Month indexing: year * 12 + month (0-indexed) for precise timeline calculations
+- Quarter display: Frontend converts months to quarters (Q1-Q4) for better overview
+- Quarter indexing: year * 4 + Math.floor(month / 3) for display calculations
+- Cell width: 80px per quarter (representing 3 months)
 
 ## Authentication & Storage
 - **Session Management**: connect-pg-simple for PostgreSQL-backed sessions
