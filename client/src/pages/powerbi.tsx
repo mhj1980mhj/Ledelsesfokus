@@ -39,7 +39,6 @@ interface PowerBIProps {
 }
 
 export default function PowerBI({ onLogout }: PowerBIProps) {
-  const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("latest");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -173,11 +172,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
   };
 
   const filteredAndSortedDashboards = useMemo(() => {
-    let filtered = dashboards.filter(dashboard => 
-      dashboard.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      dashboard.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (dashboard.description && dashboard.description.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    let filtered = [...dashboards];
 
     if (sortBy === "alphabetical") {
       filtered.sort((a, b) => a.name.localeCompare(b.name, "da"));
@@ -186,7 +181,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
     }
 
     return filtered;
-  }, [dashboards, searchQuery, sortBy]);
+  }, [dashboards, sortBy]);
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     createDashboardMutation.mutate(data);
@@ -467,18 +462,33 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-8 py-8">
-        {/* Add Dashboard Button and Dialog */}
-        <div className="flex justify-end mb-8">
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button 
-                className="bg-[#9c9387] hover:bg-[#8a816d] text-white"
-                data-testid="button-add-dashboard"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Tilføj dashboard
-              </Button>
-            </DialogTrigger>
+        <div className="w-full space-y-6">
+          <h2 className="text-2xl font-semibold text-gray-900">Dashboards</h2>
+          
+          <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-4 border border-gray-200/50 shadow-lg">
+            <div className="flex items-center gap-4">
+              <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+                <SelectTrigger className="w-[200px]" data-testid="select-sort">
+                  <SelectValue placeholder="Sortering" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="latest">Seneste først</SelectItem>
+                  <SelectItem value="alphabetical">Alfabetisk</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <div className="flex-1"></div>
+
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button 
+                    className="bg-[#9c9387] hover:bg-[#8a816d] text-white"
+                    data-testid="button-add-dashboard"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Tilføj dashboard
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]" data-testid="dialog-add-dashboard">
                 <DialogHeader>
                   <DialogTitle>Tilføj nyt Power BI Dashboard</DialogTitle>
@@ -779,50 +789,8 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                 </Form>
               </DialogContent>
             </Dialog>
-        </div>
-        {!isLoading && (
-          <div className="mb-8">
-            {/* Search and Sort Controls */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Søg efter dashboards..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white/70 backdrop-blur-xl border border-gray-200/50"
-                data-testid="input-search"
-              />
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <span className="text-sm text-gray-600">Sorter efter:</span>
-              <div className="flex space-x-2">
-                <Button
-                  variant={sortBy === "latest" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSortBy("latest")}
-                  className={sortBy === "latest" ? "bg-[#9c9387] hover:bg-[#8a816d] text-white" : ""}
-                  data-testid="button-sort-latest"
-                >
-                  <Clock className="mr-2 h-3 w-3" />
-                  Seneste
-                </Button>
-                <Button
-                  variant={sortBy === "alphabetical" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSortBy("alphabetical")}
-                  className={sortBy === "alphabetical" ? "bg-[#9c9387] hover:bg-[#8a816d] text-white" : ""}
-                  data-testid="button-sort-alphabetical"
-                >
-                  <ArrowUpDown className="mr-2 h-3 w-3" />
-                  Alfabetisk
-                </Button>
-              </div>
             </div>
           </div>
-        </div>
-        )}
 
         {isLoading ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
@@ -839,33 +807,25 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
               <Search className="h-8 w-8 text-gray-400" />
             </div>
             <h3 className="text-xl font-semibold text-gray-800 mb-2">
-              {searchQuery ? "Ingen dashboards fundet" : "Ingen dashboards endnu"}
+              Ingen dashboards endnu
             </h3>
             <p className="text-gray-600 mb-4">
-              {searchQuery 
-                ? `Din søgning efter "${searchQuery}" gav ingen resultater.`
-                : "Tilføj dit første Power BI dashboard for at komme i gang."
-              }
+              Tilføj dit første Power BI dashboard for at komme i gang.
             </p>
-            {!searchQuery && (
-              <Button 
-                onClick={() => setIsAddDialogOpen(true)}
-                className="bg-[#9c9387] hover:bg-[#8a816d] text-white"
-                data-testid="button-add-first"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Tilføj Dashboard
-              </Button>
-            )}
+            <Button 
+              onClick={() => setIsAddDialogOpen(true)}
+              className="bg-[#9c9387] hover:bg-[#8a816d] text-white"
+              data-testid="button-add-first"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Tilføj Dashboard
+            </Button>
           </div>
         ) : (
           <div className="space-y-6" data-testid="dashboard-grid">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-800">
-                {searchQuery 
-                  ? `Søgeresultater for "${searchQuery}" (${filteredAndSortedDashboards.length})`
-                  : `Alle Dashboards (${filteredAndSortedDashboards.length})`
-                }
+                Alle Dashboards ({filteredAndSortedDashboards.length})
               </h2>
               <div className="text-sm text-gray-500">
                 Sorteret efter {sortBy === "latest" ? "seneste" : "alfabetisk"}
@@ -919,6 +879,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
             </div>
           </div>
         )}
+        </div>
       </main>
     </div>
   );
