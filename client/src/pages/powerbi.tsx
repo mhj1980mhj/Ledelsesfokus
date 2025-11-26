@@ -47,9 +47,11 @@ const formSchema = insertPowerBIDashboardSchema.extend({
 
 interface PowerBIProps {
   onLogout: () => void;
+  pinnedLinks: PinnedLink[];
+  setPinnedLinks: (links: PinnedLink[]) => void;
 }
 
-export default function PowerBI({ onLogout }: PowerBIProps) {
+export default function PowerBI({ onLogout, pinnedLinks, setPinnedLinks }: PowerBIProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -60,27 +62,9 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
   const [viewingDashboard, setViewingDashboard] = useState<PowerBIDashboard | null>(null);
   const [selectedType, setSelectedType] = useState<"power-bi" | "microsoft-lists" | "sharepoint-folder">("power-bi");
   const [showArchived, setShowArchived] = useState(false);
-  const [pinnedLinks, setPinnedLinks] = useState<PinnedLink[]>([]);
   const [confirmAction, setConfirmAction] = useState<{ type: "archive" | "delete" | null, dashboardId?: string }>({ type: null });
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  // Load pinned links from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem("pinnedLinks");
-    if (stored) {
-      try {
-        setPinnedLinks(JSON.parse(stored));
-      } catch (e) {
-        console.error("Failed to load pinned links:", e);
-      }
-    }
-  }, []);
-
-  // Save pinned links to localStorage
-  useEffect(() => {
-    localStorage.setItem("pinnedLinks", JSON.stringify(pinnedLinks));
-  }, [pinnedLinks]);
 
   const togglePinLink = (dashboard: PowerBIDashboard) => {
     const isPinned = pinnedLinks.some(link => link.id === dashboard.id);
@@ -597,15 +581,12 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex">
-      <PinnedSidebar pinnedLinks={pinnedLinks} onUnpin={(id) => setPinnedLinks(pinnedLinks.filter(link => link.id !== id))} />
-      
-      <div className="flex-grow">
-        <PageHeader title="Data" subtitle="Analytiske dashboards og Microsoft Lists" onLogout={onLogout} />
-        <Navigation />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <PageHeader title="Data" subtitle="Analytiske dashboards og Microsoft Lists" onLogout={onLogout} />
+      <Navigation />
 
-        {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-8 py-8">
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-8 py-8">
         <div className="w-full space-y-6">
           <h2 className="text-2xl font-semibold text-gray-900">Ressourcer</h2>
           
@@ -1207,7 +1188,6 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
         )}
         </div>
       </main>
-      </div>
     </div>
   );
 }

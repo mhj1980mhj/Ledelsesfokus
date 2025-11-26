@@ -7,11 +7,20 @@ import Navigation from "@/components/navigation";
 import PageHeader from "@/components/page-header";
 import ProjectTimeline from "@/components/project-timeline";
 
+type PinnedLink = {
+  id: string;
+  name: string;
+  url: string;
+  type: "power-bi" | "microsoft-lists" | "sharepoint-folder";
+};
+
 interface ManagementFocusProps {
   onLogout: () => void;
+  pinnedLinks: PinnedLink[];
+  setPinnedLinks: (links: PinnedLink[]) => void;
 }
 
-export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
+export default function ManagementFocus({ onLogout, pinnedLinks, setPinnedLinks }: ManagementFocusProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [areaFilter, setAreaFilter] = useState("all");
   const [ansvarligFilter, setAnsvarligFilter] = useState("all");
