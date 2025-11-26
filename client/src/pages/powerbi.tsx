@@ -1120,15 +1120,15 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                     {dashboard.url ? (
                       <button
                         onClick={() => handleEmbedDashboard(dashboard)}
-                        className="inline-flex items-center justify-center px-4 py-2 bg-[#9c9387] hover:bg-[#8a816d] text-white rounded-lg hover:shadow-lg transition-all duration-300 font-medium h-10"
+                        className="w-full flex items-center justify-center px-4 py-3 bg-[#9c9387] hover:bg-[#8a816d] text-white rounded-lg hover:shadow-lg transition-all duration-300 font-semibold text-sm"
                         data-testid={`link-${dashboard.id}`}
                       >
                         <ExternalLink className="mr-2 h-4 w-4" />
                         {truncateTitle(dashboard.name)}
                       </button>
                     ) : (
-                      <div className="inline-flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-500 rounded-lg h-10">
-                        <span className="text-sm">URL mangler - klik tandhjulet for at opdatere</span>
+                      <div className="w-full flex items-center justify-center px-4 py-3 bg-gray-100 text-gray-500 rounded-lg text-sm">
+                        <span>URL mangler - klik tandhjulet for at opdatere</span>
                       </div>
                     )}
                   </div>
