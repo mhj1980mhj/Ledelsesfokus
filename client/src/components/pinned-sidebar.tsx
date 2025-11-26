@@ -39,7 +39,7 @@ export default function PinnedSidebar({ pinnedLinks, onUnpin, isMinimized, onTog
   };
 
   return (
-    <div className={`bg-white/70 backdrop-blur-xl border-r border-gray-200/50 shadow-lg h-screen fixed left-0 top-0 flex flex-col overflow-hidden transition-all duration-300 ${isMinimized ? "w-16" : "w-64"}`}>
+    <div className={`bg-white/70 backdrop-blur-xl border-r border-gray-200/50 shadow-lg h-screen fixed left-0 top-0 flex flex-col overflow-visible transition-all duration-300 ${isMinimized ? "w-16" : "w-64"}`}>
       <div className="p-3 border-b border-gray-200/50 flex items-center justify-between">
         <div className={`flex items-center gap-2 ${isMinimized ? "hidden" : ""}`}>
           <Pin className="h-5 w-5 text-[#9c9387] flex-shrink-0" />
@@ -105,7 +105,7 @@ export default function PinnedSidebar({ pinnedLinks, onUnpin, isMinimized, onTog
                     )}
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="bg-gray-900 text-white text-xs px-2 py-1">
+                <TooltipContent side="right" className="bg-gray-900 text-white text-xs px-2 py-1 z-50">
                   {link.name}
                 </TooltipContent>
               </Tooltip>
