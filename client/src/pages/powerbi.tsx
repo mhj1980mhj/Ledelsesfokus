@@ -31,19 +31,19 @@ type PowerBIDashboard = {
   isActive: number;
 };
 
-type PinnedLink = {
-  id: string;
-  name: string;
-  url: string;
-  type: "power-bi" | "microsoft-lists" | "sharepoint-folder";
-};
-
 type SortOption = "latest" | "alphabetical";
 
 const formSchema = insertPowerBIDashboardSchema.extend({
   url: z.string().url("Indtast venligst en gyldig URL"),
   type: z.enum(["power-bi", "microsoft-lists", "sharepoint-folder"]).default("power-bi"),
 });
+
+type PinnedLink = {
+  id: string;
+  name: string;
+  url: string;
+  type: "power-bi" | "microsoft-lists" | "sharepoint-folder";
+};
 
 interface PowerBIProps {
   onLogout: () => void;
