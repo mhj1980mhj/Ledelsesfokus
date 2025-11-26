@@ -125,6 +125,10 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
     queryKey: ["/api/projects"],
   });
 
+  const { data: areas = [] } = useQuery<any[]>({
+    queryKey: ["/api/areas"],
+  });
+
   const [projectDialog, setProjectDialog] = useState({ open: false, id: null as string | null, name: "", color: "#9c9387", area: "", ansvarlig: "" });
   const [segmentDialog, setSegmentDialog] = useState({ open: false, projectId: null as string | null, id: null as string | null, label: "", start: todayIdx, end: todayIdx, description: "" });
   const [tooltip, setTooltip] = useState({ show: false, x: 0, y: 0, content: null as React.ReactNode | null });
@@ -318,11 +322,15 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
       toast({ title: "Fejl", description: "Ansvarlig må højst være 3 tegn.", variant: "destructive" });
       return;
     }
+    if (!projectDialog.area.trim()) {
+      toast({ title: "Fejl", description: "Område skal udfyldes.", variant: "destructive" });
+      return;
+    }
     
     const data = {
       name: projectDialog.name,
       color: projectDialog.color,
-      area: projectDialog.area || null,
+      area: projectDialog.area,
       ansvarlig: projectDialog.ansvarlig,
     };
 
@@ -738,14 +746,20 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
             </Field>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Field label="Område (valgfrit)">
-              <input 
+            <Field label="Område">
+              <select 
                 value={projectDialog.area} 
-                onChange={(e) => setProjectDialog({ ...projectDialog, area: e.target.value })} 
-                placeholder="F.eks. Sekretariat, Drift, IT" 
+                onChange={(e) => setProjectDialog({ ...projectDialog, area: e.target.value })}
                 className="w-full rounded-xl border px-3 py-2 outline-none ring-0 focus:border-slate-400" 
-                data-testid="input-project-area"
-              />
+                data-testid="select-project-area"
+              >
+                <option value="">Vælg område</option>
+                {areas.map(area => (
+                  <option key={area.id} value={area.name}>
+                    {area.name}
+                  </option>
+                ))}
+              </select>
             </Field>
             <Field label="Ansvarlig">
               <input 
@@ -780,8 +794,9 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
               Annuller
             </button>
             <button 
-              onClick={saveProject} 
-              className="rounded-xl bg-[#9c9387] px-4 py-2 text-white shadow-sm hover:bg-[#8a816d]"
+              onClick={saveProject}
+              disabled={areas.length === 0}
+              className="rounded-xl bg-[#9c9387] px-4 py-2 text-white shadow-sm hover:bg-[#8a816d] disabled:opacity-50 disabled:cursor-not-allowed"
               data-testid="button-save-project"
             >
               Gem
