@@ -87,7 +87,7 @@ export class DatabaseStorage implements IStorage {
 
   async getAllDashboards(): Promise<PowerBIDashboard[]> {
     await this.initializeDefaultData();
-    const dashboards = await db.select().from(powerBIDashboards).where(eq(powerBIDashboards.isActive, 1));
+    const dashboards = await db.select().from(powerBIDashboards);
     return dashboards;
   }
 
