@@ -15,6 +15,7 @@ export const powerBIDashboards = pgTable("power_bi_dashboards", {
   url: text("url").notNull(),
   description: text("description"),
   category: text("category").notNull().default("General"),
+  type: text("type").notNull().default("power-bi"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   isActive: integer("is_active").notNull().default(1),
 });
