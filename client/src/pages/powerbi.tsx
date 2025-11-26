@@ -523,7 +523,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-8 py-8">
         <div className="w-full space-y-6">
-          <h2 className="text-2xl font-semibold text-gray-900">Dashboards</h2>
+          <h2 className="text-2xl font-semibold text-gray-900">Ressourcer</h2>
           
           <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-4 border border-gray-200/50 shadow-lg">
             <div className="flex items-center gap-4">
@@ -574,7 +574,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[500px]" data-testid="dialog-add-dashboard">
                 <DialogHeader>
-                  <DialogTitle>Tilføj nyt Dashboard</DialogTitle>
+                  <DialogTitle>Tilføj ny Ressource</DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
