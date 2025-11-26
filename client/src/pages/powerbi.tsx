@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Settings, Plus, Calendar, ArrowUpDown, Clock, ExternalLink, Trash2, ArrowLeft, ChevronDown, Check, Archive, ArchiveRestore } from "lucide-react";
+import { Search, Settings, Plus, Calendar, ArrowUpDown, Clock, ExternalLink, Trash2, ArrowLeft, ChevronDown, Check, Archive, ArchiveRestore, Pin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -17,6 +17,7 @@ import { z } from "zod";
 import Navigation from "@/components/navigation";
 import PageHeader from "@/components/page-header";
 import DashboardCard from "@/components/dashboard-card";
+import PinnedSidebar from "@/components/pinned-sidebar";
 import { useToast } from "@/hooks/use-toast";
 
 type PowerBIDashboard = {
@@ -28,6 +29,13 @@ type PowerBIDashboard = {
   type?: string;
   createdAt: string;
   isActive: number;
+};
+
+type PinnedLink = {
+  id: string;
+  name: string;
+  url: string;
+  type: "power-bi" | "microsoft-lists" | "sharepoint-folder";
 };
 
 type SortOption = "latest" | "alphabetical";
@@ -52,9 +60,47 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
   const [viewingDashboard, setViewingDashboard] = useState<PowerBIDashboard | null>(null);
   const [selectedType, setSelectedType] = useState<"power-bi" | "microsoft-lists" | "sharepoint-folder">("power-bi");
   const [showArchived, setShowArchived] = useState(false);
+  const [pinnedLinks, setPinnedLinks] = useState<PinnedLink[]>([]);
   const [confirmAction, setConfirmAction] = useState<{ type: "archive" | "delete" | null, dashboardId?: string }>({ type: null });
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Load pinned links from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem("pinnedLinks");
+    if (stored) {
+      try {
+        setPinnedLinks(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to load pinned links:", e);
+      }
+    }
+  }, []);
+
+  // Save pinned links to localStorage
+  useEffect(() => {
+    localStorage.setItem("pinnedLinks", JSON.stringify(pinnedLinks));
+  }, [pinnedLinks]);
+
+  const togglePinLink = (dashboard: PowerBIDashboard) => {
+    const isPinned = pinnedLinks.some(link => link.id === dashboard.id);
+    if (isPinned) {
+      setPinnedLinks(pinnedLinks.filter(link => link.id !== dashboard.id));
+      toast({
+        description: "Link fjernet fra fastgjort"
+      });
+    } else {
+      setPinnedLinks([...pinnedLinks, {
+        id: dashboard.id,
+        name: dashboard.name,
+        url: dashboard.url,
+        type: (dashboard.type as "power-bi" | "microsoft-lists" | "sharepoint-folder") || "power-bi"
+      }]);
+      toast({
+        description: "Link fastgjort til sidebar"
+      });
+    }
+  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -551,12 +597,15 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <PageHeader title="Data" subtitle="Analytiske dashboards og Microsoft Lists" onLogout={onLogout} />
-      <Navigation />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex">
+      <PinnedSidebar pinnedLinks={pinnedLinks} onUnpin={(id) => setPinnedLinks(pinnedLinks.filter(link => link.id !== id))} />
+      
+      <div className="flex-grow">
+        <PageHeader title="Data" subtitle="Analytiske dashboards og Microsoft Lists" onLogout={onLogout} />
+        <Navigation />
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-8 py-8">
+        {/* Main Content */}
+        <main className="max-w-7xl mx-auto px-8 py-8">
         <div className="w-full space-y-6">
           <h2 className="text-2xl font-semibold text-gray-900">Ressourcer</h2>
           
@@ -1115,6 +1164,8 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                   onExpand={() => dashboard.type === "power-bi" ? setViewingDashboard(dashboard) : window.open(dashboard.url, '_blank')}
                   onSettings={() => handleEditDashboard(dashboard)}
                   data-testid={`card-dashboard-${dashboard.id}`}
+                  onPin={() => togglePinLink(dashboard)}
+                  isPinned={pinnedLinks.some(link => link.id === dashboard.id)}
                 >
                   <div className="flex flex-col h-full">
                     <div className="flex-grow mb-4">
@@ -1156,6 +1207,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
         )}
         </div>
       </main>
+      </div>
     </div>
   );
 }

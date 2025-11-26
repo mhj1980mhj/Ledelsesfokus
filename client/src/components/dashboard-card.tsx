@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Download, ExternalLink, Settings, BarChart3, List, Folder } from "lucide-react";
+import { Download, ExternalLink, Settings, BarChart3, List, Folder, Pin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DashboardCardProps {
@@ -12,6 +12,8 @@ interface DashboardCardProps {
   type?: "power-bi" | "microsoft-lists" | "sharepoint-folder";
   onSettings?: () => void;
   onExpand?: () => void;
+  onPin?: () => void;
+  isPinned?: boolean;
   "data-testid"?: string;
 }
 
@@ -25,6 +27,8 @@ export default function DashboardCard({
   type = "power-bi",
   onSettings,
   onExpand,
+  onPin,
+  isPinned = false,
   "data-testid": testId
 }: DashboardCardProps) {
   
@@ -53,8 +57,19 @@ export default function DashboardCard({
           </h3>
         </div>
         
-        {(showDownload || showExpand || showSettings) && (
+        {(showDownload || showExpand || showSettings || onPin) && (
           <div className="flex space-x-2" data-testid="card-actions">
+            {onPin && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onPin}
+                className={`h-8 w-8 p-0 transition-colors ${isPinned ? "text-[#9c9387] hover:text-[#8a816d]" : "text-gray-400 hover:text-[#9c9387]"}`}
+                data-testid="button-pin"
+              >
+                <Pin className={`h-4 w-4 ${isPinned ? "fill-current" : ""}`} />
+              </Button>
+            )}
             {showDownload && (
               <Button
                 variant="ghost"
