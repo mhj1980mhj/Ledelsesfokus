@@ -5,8 +5,8 @@ export default function Navigation() {
   const [location] = useLocation();
 
   const navItems = [
-    { path: "/", label: "Ledelsesfokus", icon: Focus },
-    { path: "/powerbi", label: "Data", icon: BarChart3 },
+    { path: "/", label: "Data", icon: BarChart3 },
+    { path: "/ledelsesfokus", label: "Ledelsesfokus", icon: Focus },
   ];
 
   return (

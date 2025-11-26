@@ -20,8 +20,8 @@ function Router({ isAuthenticated, onLogin, onLogout }: {
 
   return (
     <Switch>
-      <Route path="/" component={() => <ManagementFocus onLogout={onLogout} />} />
-      <Route path="/powerbi" component={() => <PowerBI onLogout={onLogout} />} />
+      <Route path="/" component={() => <PowerBI onLogout={onLogout} />} />
+      <Route path="/ledelsesfokus" component={() => <ManagementFocus onLogout={onLogout} />} />
       <Route component={NotFound} />
     </Switch>
   );
