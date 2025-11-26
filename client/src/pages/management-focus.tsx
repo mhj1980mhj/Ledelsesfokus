@@ -207,7 +207,7 @@ export default function ManagementFocus({ onLogout, pinnedLinks, setPinnedLinks 
             </div>
           </div>
 
-          <ProjectTimeline searchQuery={searchQuery} areaFilter={areaFilter} ansvarligFilter={ansvarligFilter} areas={areas} />
+          <ProjectTimeline searchQuery={searchQuery} areaFilter={areaFilter} ansvarligFilter={ansvarligFilter} />
         </div>
       </main>
     </div>

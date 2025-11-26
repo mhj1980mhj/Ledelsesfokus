@@ -110,7 +110,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteArea(id: string): Promise<boolean> {
     const result = await db.delete(areas).where(eq(areas.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getAllDashboards(): Promise<PowerBIDashboard[]> {
