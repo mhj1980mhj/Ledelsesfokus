@@ -38,7 +38,7 @@ export default function PinnedSidebar({ pinnedLinks, onUnpin }: PinnedSidebarPro
   };
 
   return (
-    <div className="w-64 bg-white/70 backdrop-blur-xl border-r border-gray-200/50 shadow-lg h-screen sticky top-0 flex flex-col overflow-hidden">
+    <div className="w-64 bg-white/70 backdrop-blur-xl border-r border-gray-200/50 shadow-lg h-screen fixed left-0 top-0 flex flex-col overflow-hidden">
       <div className="p-4 border-b border-gray-200/50">
         <div className="flex items-center gap-2">
           <Pin className="h-5 w-5 text-[#9c9387]" />
