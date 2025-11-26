@@ -34,7 +34,7 @@ type SortOption = "latest" | "alphabetical";
 
 const formSchema = insertPowerBIDashboardSchema.extend({
   url: z.string().url("Indtast venligst en gyldig URL"),
-  type: z.enum(["power-bi", "microsoft-lists"]).default("power-bi"),
+  type: z.enum(["power-bi", "microsoft-lists", "sharepoint-folder"]).default("power-bi"),
 });
 
 interface PowerBIProps {
@@ -49,7 +49,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingDashboard, setEditingDashboard] = useState<PowerBIDashboard | null>(null);
   const [viewingDashboard, setViewingDashboard] = useState<PowerBIDashboard | null>(null);
-  const [selectedType, setSelectedType] = useState<"power-bi" | "microsoft-lists">("power-bi");
+  const [selectedType, setSelectedType] = useState<"power-bi" | "microsoft-lists" | "sharepoint-folder">("power-bi");
   const [showArchived, setShowArchived] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ type: "archive" | "delete" | null, dashboardId?: string }>({ type: null });
   const { toast } = useToast();
@@ -618,7 +618,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                           <FormControl>
                             <Select value={field.value} onValueChange={(value) => {
                               field.onChange(value);
-                              setSelectedType(value as "power-bi" | "microsoft-lists");
+                              setSelectedType(value as "power-bi" | "microsoft-lists" | "sharepoint-folder");
                             }}>
                               <SelectTrigger data-testid="select-dashboard-type">
                                 <SelectValue placeholder="Vælg type" />
@@ -626,6 +626,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                               <SelectContent>
                                 <SelectItem value="power-bi">Power BI</SelectItem>
                                 <SelectItem value="microsoft-lists">Microsoft Lists</SelectItem>
+                                <SelectItem value="sharepoint-folder">SharePoint Mappe</SelectItem>
                               </SelectContent>
                             </Select>
                           </FormControl>
@@ -657,10 +658,20 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                       name="url"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{form.watch("type") === "microsoft-lists" ? "Microsoft Lists URL" : "Power BI URL"}</FormLabel>
+                          <FormLabel>
+                            {form.watch("type") === "microsoft-lists" 
+                              ? "Microsoft Lists URL" 
+                              : form.watch("type") === "sharepoint-folder"
+                              ? "SharePoint Mappe URL"
+                              : "Power BI URL"}
+                          </FormLabel>
                           <FormControl>
                             <Input 
-                              placeholder={form.watch("type") === "microsoft-lists" ? "https://..." : "https://app.powerbi.com/view?r=..."} 
+                              placeholder={form.watch("type") === "microsoft-lists" 
+                                ? "https://..." 
+                                : form.watch("type") === "sharepoint-folder"
+                                ? "https://al2bolig.sharepoint.com/:f:/r/sites/..."
+                                : "https://app.powerbi.com/view?r=..."} 
                               {...field} 
                               data-testid="input-dashboard-url"
                             />

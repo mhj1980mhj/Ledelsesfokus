@@ -50,7 +50,7 @@ export const insertPowerBIDashboardSchema = createInsertSchema(powerBIDashboards
   createdAt: true,
   isActive: true,
 }).extend({
-  type: z.enum(["power-bi", "microsoft-lists"]).default("power-bi"),
+  type: z.enum(["power-bi", "microsoft-lists", "sharepoint-folder"]).default("power-bi"),
 });
 
 export const insertProjectSchema = createInsertSchema(projects).omit({

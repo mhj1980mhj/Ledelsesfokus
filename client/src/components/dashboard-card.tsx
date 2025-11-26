@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Download, ExternalLink, Settings, BarChart3, List } from "lucide-react";
+import { Download, ExternalLink, Settings, BarChart3, List, Folder } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DashboardCardProps {
@@ -9,7 +9,7 @@ interface DashboardCardProps {
   showExpand?: boolean;
   showSettings?: boolean;
   dashboardUrl?: string;
-  type?: "power-bi" | "microsoft-lists";
+  type?: "power-bi" | "microsoft-lists" | "sharepoint-folder";
   onSettings?: () => void;
   onExpand?: () => void;
   "data-testid"?: string;
@@ -35,7 +35,9 @@ export default function DashboardCard({
   };
 
   const typeIcon = type === "microsoft-lists" ? 
-    <List className="h-4 w-4 text-[#9c9387]" data-testid="icon-microsoft-lists" /> : 
+    <List className="h-4 w-4 text-[#9c9387]" data-testid="icon-microsoft-lists" /> :
+    type === "sharepoint-folder" ?
+    <Folder className="h-4 w-4 text-[#9c9387]" data-testid="icon-sharepoint-folder" /> :
     <BarChart3 className="h-4 w-4 text-[#9c9387]" data-testid="icon-power-bi" />;
 
   return (
