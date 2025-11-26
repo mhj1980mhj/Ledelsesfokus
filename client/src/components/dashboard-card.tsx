@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Download, ExternalLink, Settings } from "lucide-react";
+import { Download, ExternalLink, Settings, BarChart3, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DashboardCardProps {
@@ -9,6 +9,7 @@ interface DashboardCardProps {
   showExpand?: boolean;
   showSettings?: boolean;
   dashboardUrl?: string;
+  type?: "power-bi" | "microsoft-lists";
   onSettings?: () => void;
   onExpand?: () => void;
   "data-testid"?: string;
@@ -21,6 +22,7 @@ export default function DashboardCard({
   showExpand = false,
   showSettings = false,
   dashboardUrl,
+  type = "power-bi",
   onSettings,
   onExpand,
   "data-testid": testId
@@ -31,15 +33,23 @@ export default function DashboardCard({
       onExpand();
     }
   };
+
+  const typeIcon = type === "microsoft-lists" ? 
+    <List className="h-4 w-4 text-[#9c9387]" data-testid="icon-microsoft-lists" /> : 
+    <BarChart3 className="h-4 w-4 text-[#9c9387]" data-testid="icon-power-bi" />;
+
   return (
     <div 
       className="dashboard-card bg-white/70 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 shadow-lg"
       data-testid={testId}
     >
       <div className="flex items-center justify-between mb-4" data-testid="card-header">
-        <h3 className="text-xl font-semibold text-gray-800" data-testid="card-title">
-          {title}
-        </h3>
+        <div className="flex items-center gap-2">
+          {typeIcon}
+          <h3 className="text-xl font-semibold text-gray-800" data-testid="card-title">
+            {title}
+          </h3>
+        </div>
         
         {(showDownload || showExpand || showSettings) && (
           <div className="flex space-x-2" data-testid="card-actions">

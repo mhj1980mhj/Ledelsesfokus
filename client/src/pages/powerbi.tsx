@@ -969,6 +969,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                   showExpand
                   showSettings
                   dashboardUrl={dashboard.url || undefined}
+                  type={dashboard.type as "power-bi" | "microsoft-lists"}
                   onExpand={() => handleEmbedDashboard(dashboard)}
                   onSettings={() => handleEditDashboard(dashboard)}
                   data-testid={`card-dashboard-${dashboard.id}`}
