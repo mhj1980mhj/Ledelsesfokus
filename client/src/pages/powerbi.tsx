@@ -114,16 +114,20 @@ export default function PowerBI({ onLogout, pinnedLinks, setPinnedLinks }: Power
     staleTime: 30000
   });
 
-  // Get unique categories from existing dashboards
+  // Get unique categories from active dashboards only
   const uniqueCategories = useMemo(() => {
     const categories = dashboards
+      .filter(d => d.isActive !== 0)
       .map(d => d.category)
       .filter(category => category && category.trim() !== "");
     return Array.from(new Set(categories)).sort();
   }, [dashboards]);
 
   const existingCategories = useMemo(() => {
-    const categories = dashboards.map(dashboard => dashboard.category).filter(Boolean);
+    const categories = dashboards
+      .filter(d => d.isActive !== 0)
+      .map(dashboard => dashboard.category)
+      .filter(Boolean);
     return Array.from(new Set(categories)).sort();
   }, [dashboards]);
 
