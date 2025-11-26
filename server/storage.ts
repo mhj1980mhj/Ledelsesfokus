@@ -104,6 +104,7 @@ export class DatabaseStorage implements IStorage {
         url: dashboard.url,
         description: dashboard.description || null,
         category: dashboard.category || "General",
+        type: (dashboard as any).type || "power-bi",
       })
       .returning();
     return newDashboard;

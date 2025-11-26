@@ -24,6 +24,7 @@ type PowerBIDashboard = {
   url: string;
   description?: string;
   category: string;
+  type?: string;
   createdAt: string;
   isActive: number;
 };
@@ -31,7 +32,8 @@ type PowerBIDashboard = {
 type SortOption = "latest" | "alphabetical";
 
 const formSchema = insertPowerBIDashboardSchema.extend({
-  url: z.string().url("Indtast venligst en gyldig URL")
+  url: z.string().url("Indtast venligst en gyldig URL"),
+  type: z.enum(["power-bi", "microsoft-lists"]).default("power-bi"),
 });
 
 interface PowerBIProps {
@@ -46,6 +48,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingDashboard, setEditingDashboard] = useState<PowerBIDashboard | null>(null);
   const [viewingDashboard, setViewingDashboard] = useState<PowerBIDashboard | null>(null);
+  const [selectedType, setSelectedType] = useState<"power-bi" | "microsoft-lists">("power-bi");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -55,7 +58,8 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
       name: "",
       url: "",
       description: "",
-      category: "General"
+      category: "General",
+      type: "power-bi"
     }
   });
 
@@ -65,7 +69,8 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
       name: "",
       url: "",
       description: "",
-      category: "General"
+      category: "General",
+      type: "power-bi"
     }
   });
 
@@ -328,6 +333,27 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
               <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-6">
                 <FormField
                   control={editForm.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-700">Type</FormLabel>
+                      <FormControl>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger className="bg-white/50" data-testid="select-fullscreen-edit-type">
+                            <SelectValue placeholder="Vælg type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="power-bi">Power BI</SelectItem>
+                            <SelectItem value="microsoft-lists">Microsoft Lists</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem>
@@ -349,10 +375,10 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                   name="url"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-gray-700">Power BI URL</FormLabel>
+                      <FormLabel className="text-gray-700">{editForm.watch("type") === "microsoft-lists" ? "Microsoft Lists URL" : "Power BI URL"}</FormLabel>
                       <FormControl>
                         <Input 
-                          placeholder="https://app.powerbi.com/..." 
+                          placeholder={editForm.watch("type") === "microsoft-lists" ? "https://..." : "https://app.powerbi.com/..."} 
                           {...field}
                           className="bg-white/50"
                           data-testid="input-edit-url"
@@ -475,7 +501,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <PageHeader title="Power BI Rapporter" subtitle="Analytiske dashboards" onLogout={onLogout} />
+      <PageHeader title="Data" subtitle="Analytiske dashboards og Microsoft Lists" onLogout={onLogout} />
       <Navigation />
 
       {/* Main Content */}
@@ -532,19 +558,44 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[500px]" data-testid="dialog-add-dashboard">
                 <DialogHeader>
-                  <DialogTitle>Tilføj nyt Power BI Dashboard</DialogTitle>
+                  <DialogTitle>Tilføj nyt Dashboard</DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     <FormField
                       control={form.control}
+                      name="type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Type</FormLabel>
+                          <FormControl>
+                            <Select value={field.value} onValueChange={(value) => {
+                              field.onChange(value);
+                              setSelectedType(value as "power-bi" | "microsoft-lists");
+                            }}>
+                              <SelectTrigger data-testid="select-dashboard-type">
+                                <SelectValue placeholder="Vælg type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="power-bi">Power BI</SelectItem>
+                                <SelectItem value="microsoft-lists">Microsoft Lists</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Dashboard Navn</FormLabel>
+                          <FormLabel>Navn</FormLabel>
                           <FormControl>
                             <Input 
-                              placeholder="Indtast dashboard navn..." 
+                              placeholder="Indtast navn..." 
                               {...field} 
                               data-testid="input-dashboard-name"
                             />
@@ -559,10 +610,10 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                       name="url"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Power BI URL</FormLabel>
+                          <FormLabel>{form.watch("type") === "microsoft-lists" ? "Microsoft Lists URL" : "Power BI URL"}</FormLabel>
                           <FormControl>
                             <Input 
-                              placeholder="https://app.powerbi.com/view?r=..." 
+                              placeholder={form.watch("type") === "microsoft-lists" ? "https://..." : "https://app.powerbi.com/view?r=..."} 
                               {...field} 
                               data-testid="input-dashboard-url"
                             />
@@ -691,6 +742,27 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                   <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-6">
                     <FormField
                       control={editForm.control}
+                      name="type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700">Type</FormLabel>
+                          <FormControl>
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <SelectTrigger className="bg-white/50" data-testid="select-edit-dashboard-type">
+                                <SelectValue placeholder="Vælg type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="power-bi">Power BI</SelectItem>
+                                <SelectItem value="microsoft-lists">Microsoft Lists</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={editForm.control}
                       name="name"
                       render={({ field }) => (
                         <FormItem>
@@ -712,10 +784,10 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                       name="url"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-gray-700">Power BI URL</FormLabel>
+                          <FormLabel className="text-gray-700">{editForm.watch("type") === "microsoft-lists" ? "Microsoft Lists URL" : "Power BI URL"}</FormLabel>
                           <FormControl>
                             <Input 
-                              placeholder="https://app.powerbi.com/..." 
+                              placeholder={editForm.watch("type") === "microsoft-lists" ? "https://..." : "https://app.powerbi.com/..."} 
                               {...field}
                               className="bg-white/50"
                               data-testid="input-edit-url"
