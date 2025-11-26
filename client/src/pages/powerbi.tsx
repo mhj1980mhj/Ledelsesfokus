@@ -357,10 +357,10 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
 
         {/* Edit Dialog for full screen view */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="sm:max-w-md" data-testid="edit-dialog">
+          <DialogContent className="sm:max-w-[600px]" data-testid="edit-dialog">
             <DialogHeader>
               <DialogTitle className="text-gray-900">
-                Rediger Dashboard
+                Rediger Ressource
               </DialogTitle>
             </DialogHeader>
             <Form {...editForm}>
@@ -762,7 +762,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                         ) : (
                           <>
                             <Plus className="mr-2 h-4 w-4" />
-                            Gem Dashboard
+                            Gem Ressource
                           </>
                         )}
                       </Button>
@@ -776,10 +776,10 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
 
           {/* Edit Dashboard Dialog */}
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-              <DialogContent className="sm:max-w-md" data-testid="edit-dialog">
+              <DialogContent className="sm:max-w-[600px]" data-testid="edit-dialog">
                 <DialogHeader>
                   <DialogTitle className="text-gray-900">
-                    Rediger Dashboard
+                    Rediger Ressource
                   </DialogTitle>
                 </DialogHeader>
                 <Form {...editForm}>
