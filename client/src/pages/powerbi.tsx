@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Settings, Plus, Calendar, ArrowUpDown, Clock, ExternalLink, Trash2, ArrowLeft, ChevronDown, Check } from "lucide-react";
+import { Search, Settings, Plus, Calendar, ArrowUpDown, Clock, ExternalLink, Trash2, ArrowLeft, ChevronDown, Check, Archive, ArchiveRestore } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -49,6 +49,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
   const [editingDashboard, setEditingDashboard] = useState<PowerBIDashboard | null>(null);
   const [viewingDashboard, setViewingDashboard] = useState<PowerBIDashboard | null>(null);
   const [selectedType, setSelectedType] = useState<"power-bi" | "microsoft-lists">("power-bi");
+  const [showArchived, setShowArchived] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -193,8 +194,10 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
         (dashboard.description && dashboard.description.toLowerCase().includes(searchQuery.toLowerCase()));
       
       const matchesCategory = categoryFilter === "all" || dashboard.category === categoryFilter;
+      const isArchivedStatus = dashboard.isActive === 0;
+      const matchesArchivedFilter = showArchived ? isArchivedStatus : !isArchivedStatus;
       
-      return matchesSearch && matchesCategory;
+      return matchesSearch && matchesCategory && matchesArchivedFilter;
     });
 
     if (sortBy === "alphabetical") {
@@ -204,7 +207,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
     }
 
     return filtered;
-  }, [dashboards, searchQuery, categoryFilter, sortBy]);
+  }, [dashboards, searchQuery, categoryFilter, sortBy, showArchived]);
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     createDashboardMutation.mutate(data);
@@ -237,6 +240,21 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
   const handleDeleteDashboard = () => {
     if (editingDashboard) {
       deleteDashboardMutation.mutate(editingDashboard.id);
+    }
+  };
+
+  const handleArchiveDashboard = () => {
+    if (editingDashboard) {
+      updateDashboardMutation.mutate({
+        id: editingDashboard.id,
+        data: {
+          name: editingDashboard.name,
+          url: editingDashboard.url,
+          description: editingDashboard.description,
+          category: editingDashboard.category,
+          type: editingDashboard.type as "power-bi" | "microsoft-lists"
+        }
+      });
     }
   };
 
@@ -563,6 +581,16 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                 </SelectContent>
               </Select>
 
+              <Button
+                variant={showArchived ? "default" : "outline"}
+                onClick={() => setShowArchived(!showArchived)}
+                className={showArchived ? "bg-[#9c9387] hover:bg-[#8a816d] text-white" : ""}
+                data-testid="button-toggle-archived"
+              >
+                <Archive className="mr-2 h-4 w-4" />
+                {showArchived ? "Arkiverede" : "Aktive"}
+              </Button>
+
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
                   <Button 
@@ -886,17 +914,61 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                       )}
                     />
                     <div className="flex justify-between gap-3 pt-4">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleDeleteDashboard}
-                        disabled={deleteDashboardMutation.isPending}
-                        className="text-red-600 border-red-200 hover:bg-red-50"
-                        data-testid="button-delete-dashboard"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        {deleteDashboardMutation.isPending ? "Sletter..." : "Slet"}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={async () => {
+                            if (editingDashboard) {
+                              try {
+                                await fetch(`/api/dashboards/${editingDashboard.id}/archive`, {
+                                  method: "PATCH",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ isActive: editingDashboard.isActive === 0 ? 1 : 0 })
+                                });
+                                queryClient.invalidateQueries({ queryKey: ["/api/dashboards"] });
+                                toast({
+                                  title: "Succes!",
+                                  description: editingDashboard.isActive === 0 ? "Ressource gendannet" : "Ressource arkiveret"
+                                });
+                                setIsEditDialogOpen(false);
+                                setEditingDashboard(null);
+                              } catch (error) {
+                                toast({
+                                  title: "Fejl",
+                                  description: "Kunne ikke arkivere ressource",
+                                  variant: "destructive"
+                                });
+                              }
+                            }
+                          }}
+                          className={editingDashboard?.isActive === 0 ? "text-blue-600 border-blue-200 hover:bg-blue-50" : "text-orange-600 border-orange-200 hover:bg-orange-50"}
+                          data-testid="button-archive-dashboard"
+                        >
+                          {editingDashboard?.isActive === 0 ? (
+                            <>
+                              <ArchiveRestore className="mr-2 h-4 w-4" />
+                              Gendan
+                            </>
+                          ) : (
+                            <>
+                              <Archive className="mr-2 h-4 w-4" />
+                              Arkiver
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleDeleteDashboard}
+                          disabled={deleteDashboardMutation.isPending}
+                          className="text-red-600 border-red-200 hover:bg-red-50"
+                          data-testid="button-delete-dashboard"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          {deleteDashboardMutation.isPending ? "Sletter..." : "Slet"}
+                        </Button>
+                      </div>
                       <div className="flex gap-3">
                         <Button
                           type="button"
