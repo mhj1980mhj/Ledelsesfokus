@@ -197,10 +197,11 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
         (dashboard.description && dashboard.description.toLowerCase().includes(searchQuery.toLowerCase()));
       
       const matchesCategory = categoryFilter === "all" || dashboard.category === categoryFilter;
+      const matchesType = typeFilter === "all" || dashboard.type === typeFilter;
       const isArchivedStatus = dashboard.isActive === 0;
       const matchesArchivedFilter = showArchived ? isArchivedStatus : !isArchivedStatus;
       
-      return matchesSearch && matchesCategory && matchesArchivedFilter;
+      return matchesSearch && matchesCategory && matchesType && matchesArchivedFilter;
     });
 
     if (sortBy === "alphabetical") {
@@ -210,7 +211,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
     }
 
     return filtered;
-  }, [dashboards, searchQuery, categoryFilter, sortBy, showArchived]);
+  }, [dashboards, searchQuery, categoryFilter, typeFilter, sortBy, showArchived]);
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     createDashboardMutation.mutate(data);
@@ -594,6 +595,18 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                 <SelectContent>
                   <SelectItem value="latest">Seneste først</SelectItem>
                   <SelectItem value="alphabetical">Alfabetisk</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-[200px]" data-testid="select-type-filter">
+                  <SelectValue placeholder="Alle typer" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle typer</SelectItem>
+                  <SelectItem value="power-bi">Power BI</SelectItem>
+                  <SelectItem value="microsoft-lists">Microsoft Lists</SelectItem>
+                  <SelectItem value="sharepoint-folder">SharePoint Mappe</SelectItem>
                 </SelectContent>
               </Select>
 
