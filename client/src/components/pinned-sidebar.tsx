@@ -92,20 +92,7 @@ export default function PinnedSidebar({ pinnedLinks, onUnpin, isMinimized, onTog
                           </p>
                         </div>
                       </div>
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenLink(link);
-                          }}
-                          className="h-7 px-2 text-xs flex-grow bg-[#9c9387]/20 hover:bg-[#9c9387]/40 text-[#9c9387] transition-all"
-                          data-testid={`button-open-pinned-${link.id}`}
-                        >
-                          <ExternalLink className="h-3 w-3 mr-1" />
-                          Åbn
-                        </Button>
+                      <div className="flex gap-1 justify-end">
                         <Button
                           size="sm"
                           variant="ghost"
