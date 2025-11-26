@@ -46,9 +46,9 @@ export default function DashboardCard({
       data-testid={testId}
     >
       <div className="flex items-center justify-between mb-4" data-testid="card-header">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           {typeIcon}
-          <h3 className="text-xl font-semibold text-gray-800" data-testid="card-title">
+          <h3 className="text-xl font-semibold text-gray-800 line-clamp-1" data-testid="card-title" title={title}>
             {title}
           </h3>
         </div>
