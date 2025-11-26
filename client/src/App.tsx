@@ -33,7 +33,7 @@ function Router({ isAuthenticated, onLogin, onLogout, pinnedLinks, setPinnedLink
   return (
     <div className="flex">
       <PinnedSidebar pinnedLinks={pinnedLinks} onUnpin={(id) => setPinnedLinks(pinnedLinks.filter(link => link.id !== id))} isMinimized={isMinimized} onToggleMinimize={() => setIsMinimized(!isMinimized)} />
-      <div className={`flex-grow transition-all duration-300 ${isMinimized ? "ml-32" : "ml-64"}`}>
+      <div className={`flex-grow transition-all duration-300 ${isMinimized ? "ml-16" : "ml-64"}`}>
         <Switch>
           <Route path="/" component={() => <PowerBI onLogout={onLogout} pinnedLinks={pinnedLinks} setPinnedLinks={setPinnedLinks} />} />
           <Route path="/ledelsesfokus" component={() => <ManagementFocus onLogout={onLogout} pinnedLinks={pinnedLinks} setPinnedLinks={setPinnedLinks} />} />
