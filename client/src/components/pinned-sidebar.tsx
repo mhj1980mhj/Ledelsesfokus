@@ -69,23 +69,37 @@ export default function PinnedSidebar({ pinnedLinks, onUnpin, isMinimized, onTog
             {pinnedLinks.map((link) => (
               <Tooltip key={link.id}>
                 <TooltipTrigger asChild>
-                  <div className={`group relative bg-gradient-to-r from-[#9c9387]/10 to-transparent hover:from-[#9c9387]/20 rounded-lg transition-all duration-200 border border-[#9c9387]/20 hover:border-[#9c9387]/40 ${isMinimized ? "p-2" : "p-3"}`}>
-                    <div className={`flex items-start gap-2 ${isMinimized ? "mb-0 justify-center" : "mb-2"}`}>
+                  {isMinimized ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleOpenLink(link)}
+                      className="h-10 w-10 p-0 rounded-lg bg-gradient-to-r from-[#9c9387]/10 to-transparent hover:from-[#9c9387]/20 border border-[#9c9387]/20 hover:border-[#9c9387]/40 transition-all"
+                      data-testid={`button-open-pinned-${link.id}`}
+                    >
                       {getTypeIcon(link.type)}
-                      {!isMinimized && (
+                    </Button>
+                  ) : (
+                    <div
+                      onClick={() => handleOpenLink(link)}
+                      className="group relative bg-gradient-to-r from-[#9c9387]/10 to-transparent hover:from-[#9c9387]/20 rounded-lg p-3 transition-all duration-200 border border-[#9c9387]/20 hover:border-[#9c9387]/40 cursor-pointer"
+                    >
+                      <div className="flex items-start gap-2 mb-2">
+                        {getTypeIcon(link.type)}
                         <div className="flex-grow min-w-0">
                           <p className="text-xs font-semibold text-gray-800 truncate">
                             {link.name}
                           </p>
                         </div>
-                      )}
-                    </div>
-                    {!isMinimized && (
+                      </div>
                       <div className="flex gap-1">
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => handleOpenLink(link)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenLink(link);
+                          }}
                           className="h-7 px-2 text-xs flex-grow bg-[#9c9387]/20 hover:bg-[#9c9387]/40 text-[#9c9387] transition-all"
                           data-testid={`button-open-pinned-${link.id}`}
                         >
@@ -95,15 +109,18 @@ export default function PinnedSidebar({ pinnedLinks, onUnpin, isMinimized, onTog
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => onUnpin(link.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onUnpin(link.id);
+                          }}
                           className="h-7 px-2 text-gray-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
                           data-testid={`button-unpin-${link.id}`}
                         >
                           <X className="h-3 w-3" />
                         </Button>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </TooltipTrigger>
                 <TooltipContent side="right" className="bg-gray-900 text-white text-xs px-2 py-1 z-[9999]">
                   {link.name}
