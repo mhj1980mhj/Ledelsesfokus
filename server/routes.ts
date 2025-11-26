@@ -1,8 +1,47 @@
 import { Request, Response, Router } from "express";
-import { insertPowerBIDashboardSchema, insertProjectSchema, insertSegmentSchema } from "@shared/schema";
+import { insertAreaSchema, insertPowerBIDashboardSchema, insertProjectSchema, insertSegmentSchema } from "@shared/schema";
 import { storage } from "./storage";
 
 const router = Router();
+
+// Area Routes
+router.get("/api/areas", async (req: Request, res: Response) => {
+  try {
+    const areas = await storage.getAllAreas();
+    res.json(areas);
+  } catch (error) {
+    console.error("Error fetching areas:", error);
+    res.status(500).json({ error: "Failed to fetch areas" });
+  }
+});
+
+router.post("/api/areas", async (req: Request, res: Response) => {
+  try {
+    const validation = insertAreaSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Invalid area data", details: validation.error });
+    }
+    const area = await storage.createArea(validation.data);
+    res.status(201).json(area);
+  } catch (error) {
+    console.error("Error creating area:", error);
+    res.status(500).json({ error: "Failed to create area" });
+  }
+});
+
+router.delete("/api/areas/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const success = await storage.deleteArea(id);
+    if (!success) {
+      return res.status(404).json({ error: "Area not found" });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting area:", error);
+    res.status(500).json({ error: "Failed to delete area" });
+  }
+});
 
 // Dashboard Routes
 router.get("/api/dashboards", async (req: Request, res: Response) => {

@@ -1,4 +1,4 @@
-import { User, InsertUser, PowerBIDashboard, InsertPowerBIDashboard, Project, InsertProject, Segment, InsertSegment, users, powerBIDashboards, projects, segments } from "@shared/schema";
+import { User, InsertUser, Area, InsertArea, PowerBIDashboard, InsertPowerBIDashboard, Project, InsertProject, Segment, InsertSegment, users, areas, powerBIDashboards, projects, segments } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq, desc, sql as drizzleSql } from "drizzle-orm";
@@ -8,6 +8,12 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  
+  // Areas
+  getAllAreas(): Promise<Area[]>;
+  getArea(id: string): Promise<Area | null>;
+  createArea(area: InsertArea): Promise<Area>;
+  deleteArea(id: string): Promise<boolean>;
   
   // Power BI Dashboards
   getAllDashboards(): Promise<PowerBIDashboard[]>;
@@ -83,6 +89,28 @@ export class DatabaseStorage implements IStorage {
     const user: User = { ...insertUser, id };
     this.users.set(id, user);
     return user;
+  }
+
+  async getAllAreas(): Promise<Area[]> {
+    return await db.select().from(areas);
+  }
+
+  async getArea(id: string): Promise<Area | null> {
+    const [area] = await db.select().from(areas).where(eq(areas.id, id));
+    return area || null;
+  }
+
+  async createArea(area: InsertArea): Promise<Area> {
+    const [newArea] = await db
+      .insert(areas)
+      .values(area)
+      .returning();
+    return newArea;
+  }
+
+  async deleteArea(id: string): Promise<boolean> {
+    const result = await db.delete(areas).where(eq(areas.id, id));
+    return result.rowCount > 0;
   }
 
   async getAllDashboards(): Promise<PowerBIDashboard[]> {

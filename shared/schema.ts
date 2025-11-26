@@ -9,6 +9,12 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
 });
 
+export const areas = pgTable("areas", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  color: text("color").notNull(),
+});
+
 export const powerBIDashboards = pgTable("power_bi_dashboards", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
@@ -45,6 +51,10 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
 });
 
+export const insertAreaSchema = createInsertSchema(areas).omit({
+  id: true,
+});
+
 export const insertPowerBIDashboardSchema = createInsertSchema(powerBIDashboards).omit({
   id: true,
   createdAt: true,
@@ -67,6 +77,8 @@ export const insertSegmentSchema = createInsertSchema(segments).omit({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+export type InsertArea = z.infer<typeof insertAreaSchema>;
+export type Area = typeof areas.$inferSelect;
 export type InsertPowerBIDashboard = z.infer<typeof insertPowerBIDashboardSchema>;
 export type PowerBIDashboard = typeof powerBIDashboards.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
