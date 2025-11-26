@@ -1,7 +1,6 @@
 import { ReactNode } from "react";
-import { Download, ExternalLink, Settings, BarChart3, Folder } from "lucide-react";
+import { Download, ExternalLink, Settings, BarChart3, List, Folder } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import microsoftListsIcon from "@assets/microsoft-lists-icon.png";
 
 interface DashboardCardProps {
   title: string;
@@ -36,7 +35,7 @@ export default function DashboardCard({
   };
 
   const typeIcon = type === "microsoft-lists" ? 
-    <img src={microsoftListsIcon} alt="Microsoft Lists" className="h-7 w-7" data-testid="icon-microsoft-lists" /> :
+    <List className="h-7 w-7 text-[#107C10]" data-testid="icon-microsoft-lists" /> :
     type === "sharepoint-folder" ?
     <Folder className="h-7 w-7 text-[#ED7D31]" data-testid="icon-sharepoint-folder" /> :
     <BarChart3 className="h-7 w-7 text-[#0078D4]" data-testid="icon-power-bi" />;
