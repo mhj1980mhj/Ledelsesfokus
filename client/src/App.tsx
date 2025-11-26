@@ -17,12 +17,14 @@ type PinnedLink = {
   type: "power-bi" | "microsoft-lists" | "sharepoint-folder";
 };
 
-function Router({ isAuthenticated, onLogin, onLogout, pinnedLinks, setPinnedLinks }: { 
+function Router({ isAuthenticated, onLogin, onLogout, pinnedLinks, setPinnedLinks, isMinimized, setIsMinimized }: { 
   isAuthenticated: boolean;
   onLogin: () => void;
   onLogout: () => void;
   pinnedLinks: PinnedLink[];
   setPinnedLinks: (links: PinnedLink[]) => void;
+  isMinimized: boolean;
+  setIsMinimized: (minimized: boolean) => void;
 }) {
   if (!isAuthenticated) {
     return <Login onLogin={onLogin} />;
@@ -30,8 +32,8 @@ function Router({ isAuthenticated, onLogin, onLogout, pinnedLinks, setPinnedLink
 
   return (
     <div className="flex">
-      <PinnedSidebar pinnedLinks={pinnedLinks} onUnpin={(id) => setPinnedLinks(pinnedLinks.filter(link => link.id !== id))} />
-      <div className="flex-grow ml-64">
+      <PinnedSidebar pinnedLinks={pinnedLinks} onUnpin={(id) => setPinnedLinks(pinnedLinks.filter(link => link.id !== id))} isMinimized={isMinimized} onToggleMinimize={() => setIsMinimized(!isMinimized)} />
+      <div className={`flex-grow transition-all duration-300 ${isMinimized ? "ml-32" : "ml-64"}`}>
         <Switch>
           <Route path="/" component={() => <PowerBI onLogout={onLogout} pinnedLinks={pinnedLinks} setPinnedLinks={setPinnedLinks} />} />
           <Route path="/ledelsesfokus" component={() => <ManagementFocus onLogout={onLogout} pinnedLinks={pinnedLinks} setPinnedLinks={setPinnedLinks} />} />
@@ -45,6 +47,7 @@ function Router({ isAuthenticated, onLogin, onLogout, pinnedLinks, setPinnedLink
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pinnedLinks, setPinnedLinks] = useState<PinnedLink[]>([]);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   // Load pinned links from localStorage
   useEffect(() => {
@@ -90,6 +93,8 @@ function App() {
           onLogout={handleLogout}
           pinnedLinks={pinnedLinks}
           setPinnedLinks={setPinnedLinks}
+          isMinimized={isMinimized}
+          setIsMinimized={setIsMinimized}
         />
       </TooltipProvider>
     </QueryClientProvider>
