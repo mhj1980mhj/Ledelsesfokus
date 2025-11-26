@@ -326,10 +326,13 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
       toast({ title: "Fejl", description: "Område skal udfyldes.", variant: "destructive" });
       return;
     }
+
+    const selectedArea = areas.find(a => a.name === projectDialog.area);
+    const areaColor = selectedArea?.color || "#9c9387";
     
     const data = {
       name: projectDialog.name,
-      color: projectDialog.color,
+      color: areaColor,
       area: projectDialog.area,
       ansvarlig: projectDialog.ansvarlig,
     };
@@ -726,25 +729,14 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
       <Modal open={projectDialog.open} onClose={() => setProjectDialog(p => ({ ...p, open: false }))}>
         <ModalHeader title={projectDialog.id ? "Rediger projekt" : "Nyt projekt"} onClose={() => setProjectDialog(p => ({ ...p, open: false }))} />
         <div className="flex max-h-[70vh] flex-col gap-4 overflow-auto p-5">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Field label="Navn">
-              <input 
-                value={projectDialog.name} 
-                onChange={(e) => setProjectDialog({ ...projectDialog, name: e.target.value })} 
-                className="w-full rounded-xl border px-3 py-2 outline-none ring-0 focus:border-slate-400" 
-                data-testid="input-project-name"
-              />
-            </Field>
-            <Field label="Farve">
-              <input 
-                type="color" 
-                value={projectDialog.color} 
-                onChange={(e) => setProjectDialog({ ...projectDialog, color: e.target.value })} 
-                className="h-10 w-14 cursor-pointer rounded-xl border bg-white p-1" 
-                data-testid="input-project-color"
-              />
-            </Field>
-          </div>
+          <Field label="Navn">
+            <input 
+              value={projectDialog.name} 
+              onChange={(e) => setProjectDialog({ ...projectDialog, name: e.target.value })} 
+              className="w-full rounded-xl border px-3 py-2 outline-none ring-0 focus:border-slate-400" 
+              data-testid="input-project-name"
+            />
+          </Field>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Field label="Område">
               <select 
