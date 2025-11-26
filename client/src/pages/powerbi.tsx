@@ -936,10 +936,10 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
               <Search className="h-8 w-8 text-gray-400" />
             </div>
             <h3 className="text-xl font-semibold text-gray-800 mb-2">
-              Ingen dashboards endnu
+              Ingen ressourcer endnu
             </h3>
             <p className="text-gray-600 mb-4">
-              Tilføj dit første Power BI dashboard for at komme i gang.
+              Tilføj din første ressource for at komme i gang.
             </p>
             <Button 
               onClick={() => setIsAddDialogOpen(true)}
@@ -947,14 +947,14 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
               data-testid="button-add-first"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Tilføj Dashboard
+              Tilføj Ressource
             </Button>
           </div>
         ) : (
           <div className="space-y-6" data-testid="dashboard-grid">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-800">
-                Alle Dashboards ({filteredAndSortedDashboards.length})
+                Alle Ressourcer ({filteredAndSortedDashboards.length})
               </h2>
               <div className="text-sm text-gray-500">
                 Sorteret efter {sortBy === "latest" ? "seneste" : "alfabetisk"}
