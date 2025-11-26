@@ -233,6 +233,12 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
   };
 
   const handleEmbedDashboard = (dashboard: PowerBIDashboard) => {
+    // For SharePoint folders and Microsoft Lists, open in new tab instead of embedding
+    if (dashboard.type === "microsoft-lists" || dashboard.type === "sharepoint-folder") {
+      window.open(dashboard.url, '_blank');
+      return;
+    }
+    // For Power BI, show embedded view
     console.log("Expanding dashboard:", dashboard.name);
     console.log("Current viewingDashboard:", viewingDashboard);
     setViewingDashboard(dashboard);
@@ -1084,7 +1090,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                   showExpand
                   showSettings
                   dashboardUrl={dashboard.url || undefined}
-                  type={dashboard.type as "power-bi" | "microsoft-lists"}
+                  type={dashboard.type as "power-bi" | "microsoft-lists" | "sharepoint-folder"}
                   onExpand={() => handleEmbedDashboard(dashboard)}
                   onSettings={() => handleEditDashboard(dashboard)}
                   data-testid={`card-dashboard-${dashboard.id}`}

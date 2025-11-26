@@ -1,0 +1,71 @@
+Fejlbeskeden tyder næsten 100 % på hvordan linket bruges – ikke på selve linket. 🙃
+
+"al2bolig.sharepoint.com refused to connect" er den klassiske besked, når:
+
+man prøver at vise en side inde i en iframe/indlejret boks på en anden hjemmeside
+
+og den side (her: SharePoint) siger: “Nope, jeg vil kun vises direkte – ikke indeni andre sider.”
+
+Med andre ord: SharePoint blokkerer for at blive indlejret på eksterne domæner. Det er et sikkerhedstiltag.
+
+1. Hvis du har indsat linket som indlejring (iframe, “Embed”, “Indsæt ekstern side” el.lign.)
+
+Så vil du typisk få præcis den fejl.
+
+Eksempler på ting, der giver problemet:
+
+En <iframe src="https://al2bolig.sharepoint.com/..."> i din kode
+
+Et CMS-modul/blok, der hedder noget i stil med:
+
+“Indlejret side”
+
+“Embed”
+
+“Vis ekstern hjemmeside”
+
+“iFrame”
+
+👉 Løsning:
+Brug i stedet et helt almindeligt link/knap, der åbner SharePoint i en ny fane, fx:
+
+<a href="https://al2bolig.sharepoint.com/:f:/r/sites/Organisationsbestyrelsen/Delte%20dokumenter/OB-Møder/2025?csf=1&web=1&e=TJyAxH" target="_blank" rel="noopener">
+  Gå til mappen på SharePoint
+</a>
+
+
+Eller via dit CMS: lav en normal tekst/knap med link – ikke “embed”.
+
+Så vil brugeren bare blive sendt direkte til SharePoint (og så blive mødt af login, hvis de ikke er logget ind).
+
+2. Hvis det allerede er et almindeligt link
+
+Hvis du ikke indlejrer, men bare har et klikbart link, og du alligevel får “refused to connect”, er de typiske muligheder:
+
+Browseren prøver at åbne det i en slags forhåndsvisning/indlejret vindue
+Nogle CMS’er eller “link preview”-widgets åbner eksterne sider i en ramme – samme problem som iframe.
+
+En plugin/”app” på siden wrapper linket
+Fx en “file viewer”, der prøver at vise SharePoint-indholdet direkte.
+
+👉 Her er løsningen stadig den samme: sørg for, at det kun er et helt simpelt link, der åbner URL’en i ny fane – uden nogen form for forhåndsvisning eller indlejring.
+
+3. Husk også: Har brugerne overhovedet adgang?
+
+Selv når fejlen med “refused to connect” er løst, skal to ting være på plads:
+
+Brugeren skal være logget ind med en konto, der har adgang til sitet Organisationsbestyrelsen.
+
+Delingsindstillingerne for mappen / filerne skal tillade de brugere, du forventer (internt, gæster, “Anyone with the link”, alt efter hvad jeres IT har åbnet for).
+
+Hvis linket er til offentlige brugere uden Microsoft-konto, vil det typisk ikke fungere, medmindre jeres tenant tillader anonyme delingslinks – det er noget jeres IT skal styre.
+
+Kort opsummeret
+
+Fejlen skyldes næsten sikkert, at SharePoint prøves vist indlejret (iframe/preview) på din hjemmeside.
+
+Lav det om til et almindeligt link, der åbner i ny fane → så forsvinder “refused to connect”-fejlen.
+
+Derefter er det “bare” login- og rettighedsstyring, der afgør, hvem der faktisk kan se mappen.
+
+Hvis du vil, kan du fx sende mig et udsnit af HTML’en eller forklare, hvilket CMS du bruger (WordPress, Umbraco, Joomla, noget helt fjerde), så kan jeg skrive en helt konkret “sådan gør du trin-for-trin” til netop din løsning.
