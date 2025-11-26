@@ -19,12 +19,12 @@ export default function PinnedSidebar({ pinnedLinks, onUnpin }: PinnedSidebarPro
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "microsoft-lists":
-        return <List className="h-4 w-4 text-[#107C10]" />;
+        return <List className="h-5 w-5 text-[#107C10]" />;
       case "sharepoint-folder":
-        return <Folder className="h-4 w-4 text-[#ED7D31]" />;
+        return <Folder className="h-5 w-5 text-[#ED7D31]" />;
       case "power-bi":
       default:
-        return <BarChart3 className="h-4 w-4 text-[#0078D4]" />;
+        return <BarChart3 className="h-5 w-5 text-[#0078D4]" />;
     }
   };
 
