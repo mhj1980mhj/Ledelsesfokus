@@ -296,16 +296,32 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
           </div>
         </header>
 
-        {/* Full screen Power BI embed */}
+        {/* Full screen Power BI embed or Microsoft Lists link */}
         <main className="h-[calc(100vh-100px)]">
           {viewingDashboard.url ? (
-            <iframe
-              src={viewingDashboard.url}
-              className="w-full h-full border-0"
-              allowFullScreen
-              title={viewingDashboard.name}
-              data-testid="powerbi-iframe-fullscreen"
-            />
+            viewingDashboard.type === "microsoft-lists" ? (
+              <div className="flex items-center justify-center h-full bg-gray-50 flex-col gap-4">
+                <div className="text-center">
+                  <p className="text-gray-700 mb-4">Microsoft Lists kræver login i en ny side</p>
+                  <Button
+                    onClick={() => window.open(viewingDashboard.url, "_blank")}
+                    className="bg-[#9c9387] hover:bg-[#8a816d] text-white"
+                    data-testid="button-open-lists"
+                  >
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Åbn Microsoft Lists
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <iframe
+                src={viewingDashboard.url}
+                className="w-full h-full border-0"
+                allowFullScreen
+                title={viewingDashboard.name}
+                data-testid="powerbi-iframe-fullscreen"
+              />
+            )
           ) : (
             <div className="flex items-center justify-center h-full bg-gray-50">
               <div className="text-center">
