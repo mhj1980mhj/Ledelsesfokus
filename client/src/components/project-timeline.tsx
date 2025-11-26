@@ -263,11 +263,13 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
         toast({ title: "Segment opdateret", description: "Segmentet er blevet opdateret succesfuldt." });
       }
     },
-    onError: (error: any, _variables, context: any) => {
+    onError: (error: any, variables, context: any) => {
       if (context?.previousProjects) {
         queryClient.setQueryData(["/api/projects"], context.previousProjects);
       }
-      toast({ title: "Fejl", description: error.message || "Kunne ikke opdatere segment.", variant: "destructive" });
+      if (variables.showToast !== false) {
+        toast({ title: "Fejl", description: error.message || "Kunne ikke opdatere segment.", variant: "destructive" });
+      }
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
