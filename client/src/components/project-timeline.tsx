@@ -69,6 +69,10 @@ function clampToGaps(segments: any[], segId: string, start: number, end: number)
   return [sClamped, eClamped];
 }
 
+function hasOverlap(segments: any[], segId: string, start: number, end: number) {
+  return segments.some(s => s.id !== segId && s.startMonth < end && s.endMonth > start);
+}
+
 function Modal({ open, onClose, children }: { open: boolean; onClose: () => void; children: React.ReactNode }) {
   if (!open) return null;
   return (
@@ -422,6 +426,11 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
     }
 
     [start, end] = clampToGaps(project.segments, segment.id, start, end);
+
+    // Check for overlaps - if there would be an overlap, don't update
+    if (hasOverlap(project.segments, segment.id, start, end)) {
+      return;
+    }
 
     if (start !== segment.startMonth || end !== segment.endMonth) {
       updateSegmentMutation.mutate({
