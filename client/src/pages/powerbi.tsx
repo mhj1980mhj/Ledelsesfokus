@@ -4,6 +4,7 @@ import { Search, Settings, Plus, Calendar, ArrowUpDown, Clock, ExternalLink, Tra
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -50,6 +51,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
   const [viewingDashboard, setViewingDashboard] = useState<PowerBIDashboard | null>(null);
   const [selectedType, setSelectedType] = useState<"power-bi" | "microsoft-lists">("power-bi");
   const [showArchived, setShowArchived] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{ type: "archive" | "delete" | null, dashboardId?: string }>({ type: null });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -596,6 +598,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                   <Button 
                     className="bg-[#9c9387] hover:bg-[#8a816d] text-white h-10 w-10 p-0"
                     data-testid="button-add-dashboard"
+                    disabled={showArchived}
                   >
                     <Plus className="h-5 w-5" />
                   </Button>
@@ -918,30 +921,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={async () => {
-                            if (editingDashboard) {
-                              try {
-                                await fetch(`/api/dashboards/${editingDashboard.id}/archive`, {
-                                  method: "PATCH",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ isActive: editingDashboard.isActive === 0 ? 1 : 0 })
-                                });
-                                queryClient.invalidateQueries({ queryKey: ["/api/dashboards"] });
-                                toast({
-                                  title: "Succes!",
-                                  description: editingDashboard.isActive === 0 ? "Ressource gendannet" : "Ressource arkiveret"
-                                });
-                                setIsEditDialogOpen(false);
-                                setEditingDashboard(null);
-                              } catch (error) {
-                                toast({
-                                  title: "Fejl",
-                                  description: "Kunne ikke arkivere ressource",
-                                  variant: "destructive"
-                                });
-                              }
-                            }
-                          }}
+                          onClick={() => setConfirmAction({ type: "archive", dashboardId: editingDashboard?.id })}
                           className={editingDashboard?.isActive === 0 ? "text-blue-600 border-blue-200 hover:bg-blue-50" : "text-orange-600 border-orange-200 hover:bg-orange-50"}
                           data-testid="button-archive-dashboard"
                         >
@@ -960,7 +940,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={handleDeleteDashboard}
+                          onClick={() => setConfirmAction({ type: "delete", dashboardId: editingDashboard?.id })}
                           disabled={deleteDashboardMutation.isPending}
                           className="text-red-600 border-red-200 hover:bg-red-50"
                           data-testid="button-delete-dashboard"
@@ -992,6 +972,58 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                 </Form>
               </DialogContent>
             </Dialog>
+
+            <AlertDialog open={confirmAction.type === "archive" || confirmAction.type === "delete"} onOpenChange={() => setConfirmAction({ type: null })}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {confirmAction.type === "delete" ? "Slet ressource?" : editingDashboard?.isActive === 0 ? "Gendan ressource?" : "Arkiver ressource?"}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {confirmAction.type === "delete" 
+                      ? "Dette kan ikke fortrydes. Ressourcen slettes permanent."
+                      : editingDashboard?.isActive === 0 
+                      ? "Ressourcen vil blive gjort aktiv igen og vises på siden."
+                      : "Ressourcen vil blive arkiveret og skjult fra hovedsiden."}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="flex gap-3 justify-end">
+                  <AlertDialogCancel>Annuller</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={async () => {
+                      if (confirmAction.type === "delete" && editingDashboard) {
+                        handleDeleteDashboard();
+                      } else if (confirmAction.type === "archive" && editingDashboard) {
+                        try {
+                          await fetch(`/api/dashboards/${editingDashboard.id}/archive`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ isActive: editingDashboard.isActive === 0 ? 1 : 0 })
+                          });
+                          queryClient.invalidateQueries({ queryKey: ["/api/dashboards"] });
+                          toast({
+                            title: "Succes!",
+                            description: editingDashboard.isActive === 0 ? "Ressource gendannet" : "Ressource arkiveret"
+                          });
+                          setIsEditDialogOpen(false);
+                          setEditingDashboard(null);
+                          setConfirmAction({ type: null });
+                        } catch (error) {
+                          toast({
+                            title: "Fejl",
+                            description: "Kunne ikke arkivere ressource",
+                            variant: "destructive"
+                          });
+                        }
+                      }
+                    }}
+                    className={confirmAction.type === "delete" ? "bg-red-600 hover:bg-red-700" : "bg-[#9c9387] hover:bg-[#8a816d]"}
+                  >
+                    {confirmAction.type === "delete" ? "Slet" : editingDashboard?.isActive === 0 ? "Gendan" : "Arkiver"}
+                  </AlertDialogAction>
+                </div>
+              </AlertDialogContent>
+            </AlertDialog>
 
         {isLoading ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">

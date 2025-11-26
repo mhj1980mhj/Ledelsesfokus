@@ -63,6 +63,21 @@ router.put("/api/dashboards/:id", async (req: Request, res: Response) => {
   }
 });
 
+router.patch("/api/dashboards/:id/archive", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { isActive } = req.body;
+    const dashboard = await storage.updateDashboard(id, { isActive } as any);
+    if (!dashboard) {
+      return res.status(404).json({ error: "Dashboard not found" });
+    }
+    res.json(dashboard);
+  } catch (error) {
+    console.error("Error archiving dashboard:", error);
+    res.status(500).json({ error: "Failed to archive dashboard" });
+  }
+});
+
 router.delete("/api/dashboards/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
