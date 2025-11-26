@@ -1,0 +1,106 @@
+🧩 Hvad der er galt med layoutet
+
+Der er tre tydelige problemer i det, du viser:
+
+1. Knapperne har ikke samme bredde og ser visuelt “knækkede” ud
+
+I de to første kort er knappen bred og fylder hele kortets nederste del.
+I det tredje kort er knappen smallere og teksten er afkortet (“Beboerundersøgelse 2…”).
+
+Det får kortene til at se ujævne og uens ud.
+
+Hvorfor sker det?
+Ofte fordi:
+
+knappen får sin bredde ud fra indholdets længde i stedet for en fast bredde
+
+eller fordi knap-komponenten ikke har ens styling i alle tre kort
+
+2. Ikonet på knappen (den lille pil) ligger forskelligt
+
+På de to første knapper er der kun et ikon.
+På den tredje er der både tekst og ikon → derfor forskydes layoutet.
+
+3. Kortene virker ikke som om de følger den samme komponentstruktur
+
+Fx:
+
+Tekststørrelser varierer
+
+Afstande (padding/margin) inde i kortene varierer
+
+Nogle knapper har tekst, andre kun ikon
+
+Nogle overskrifter flyder ud, andre bliver afkortet
+
+Det giver et indtryk af, at hvert kort er “håndbygget” i stedet for at bruge én fælles komponent.
+
+🛠️ Hvordan du fixer det (forklaret i menneskesprog)
+
+Her er instruktioner, skrevet meget konkret, så både udviklere og LLM’er kan handle på dem:
+
+1. Lav én fælles kort-komponent
+
+Alt indhold i et kort skal følge samme struktur:
+
+[Ikon + titel]
+[Kategori-mærke]
+[Dato]
+[Beskrivelse (valgfri)]
+[Primær knap]
+
+
+Når denne struktur er ens, bliver layoutet automatisk ens.
+
+2. Giv knappen en fast bredde
+
+Knapperne skal ikke ændre størrelse efter tekstens længde.
+
+Instruktionssætning til LLM:
+
+“Sørg for at knappen altid fylder 100 % af kortets bredde uanset tekstlængde. Brug width: 100% på knap-wrapperen.”
+
+3. Gør knap-indholdet ens
+
+Vælg én af disse to modeller og brug den overalt:
+
+Model A – knap med kun ikon
+
+→ Alle knapper vises ens.
+
+Model B – knap med tekst + ikon
+
+→ Tekst skal ALDRIG afkortes.
+→ Ikonet skal alignes til højre for teksten.
+
+Instruktionssætning til LLM:
+
+“Alle primære knapper skal bruge samme komponent med tekst og ikon placeret i et fleks-layout, så ikon og tekst står ens i alle kort.”
+
+4. Sørg for ens afstande og typografi
+
+Overskrifter, dato og badges skal bruge de samme:
+
+font-size
+
+font-weight
+
+margins
+
+line-height
+
+Instruktionssætning til LLM:
+
+“Brug en delt spacing-scale og typography-scale, så alle kort har de samme marginer og skrifter.”
+
+5. Fjern line-breaks og overflow på knap-teksten
+
+Teksten skal være på én linje og hellere afkortes med ... end at ændre knap-størrelse.
+
+Instruktionssætning:
+
+“Brug text-overflow: ellipsis, white-space: nowrap, og overflow: hidden på knapteksten.”
+
+🧾 Kort opsummering i én sætning
+
+Layoutet ser forkert ud, fordi kortene ikke bruger samme komponent, og knapperne ikke har ens bredde, indhold eller spacing – løs problemet ved at standardisere kort-komponenten, give knappen width: 100%, og sikre samme struktur, typografi og spacing på alle tre kort.

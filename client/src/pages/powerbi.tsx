@@ -1102,33 +1102,36 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                   onSettings={() => handleEditDashboard(dashboard)}
                   data-testid={`card-dashboard-${dashboard.id}`}
                 >
-                  <div className="space-y-4">
-                    {dashboard.description && (
-                      <p className="text-sm text-gray-600 mb-4" data-testid="dashboard-description">
-                        {dashboard.description}
-                      </p>
-                    )}
-                    <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-                      <span className="bg-primary-100 text-primary-700 px-2 py-1 rounded-full">
-                        {dashboard.category}
-                      </span>
-                      <span className="flex items-center">
-                        <Calendar className="mr-1 h-3 w-3" />
-                        {new Date(dashboard.createdAt).toLocaleDateString("da-DK")}
-                      </span>
+                  <div className="flex flex-col h-full">
+                    <div className="flex-grow mb-4">
+                      {dashboard.description && (
+                        <p className="text-sm text-gray-600 mb-3 line-clamp-2" data-testid="dashboard-description">
+                          {dashboard.description}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between text-xs text-gray-500 gap-2">
+                        <span className="bg-primary-100 text-primary-700 px-2 py-1 rounded-full flex-shrink-0">
+                          {dashboard.category}
+                        </span>
+                        <span className="flex items-center flex-shrink-0">
+                          <Calendar className="mr-1 h-3 w-3" />
+                          {new Date(dashboard.createdAt).toLocaleDateString("da-DK")}
+                        </span>
+                      </div>
                     </div>
                     {dashboard.url ? (
                       <button
                         onClick={() => handleEmbedDashboard(dashboard)}
-                        className="w-full flex items-center justify-center px-4 py-3 bg-[#9c9387] hover:bg-[#8a816d] text-white rounded-lg hover:shadow-lg transition-all duration-300 font-semibold text-sm truncate"
+                        className="w-full flex items-center justify-center px-4 py-3 bg-[#9c9387] hover:bg-[#8a816d] text-white rounded-lg hover:shadow-lg transition-all duration-300 font-semibold text-sm h-11 whitespace-nowrap overflow-hidden"
                         data-testid={`link-${dashboard.id}`}
+                        title={dashboard.name}
                       >
                         <ExternalLink className="mr-2 h-4 w-4 flex-shrink-0" />
                         <span className="truncate">{truncateTitle(dashboard.name, 20)}</span>
                       </button>
                     ) : (
-                      <div className="w-full flex items-center justify-center px-4 py-3 bg-gray-100 text-gray-500 rounded-lg text-sm">
-                        <span>URL mangler - klik tandhjulet for at opdatere</span>
+                      <div className="w-full flex items-center justify-center px-4 py-3 bg-gray-100 text-gray-500 rounded-lg text-sm h-11">
+                        <span className="text-xs">URL mangler - rediger</span>
                       </div>
                     )}
                   </div>
