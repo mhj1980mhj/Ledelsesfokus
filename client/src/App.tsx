@@ -47,7 +47,7 @@ function Router({ isAuthenticated, onLogin, onLogout, pinnedLinks, setPinnedLink
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pinnedLinks, setPinnedLinks] = useState<PinnedLink[]>([]);
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(true);
 
   // Load pinned links from localStorage
   useEffect(() => {
