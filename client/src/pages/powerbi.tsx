@@ -1122,15 +1122,15 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                     {dashboard.url ? (
                       <button
                         onClick={() => handleEmbedDashboard(dashboard)}
-                        className="flex items-center justify-center px-3 py-2 bg-[#9c9387] hover:bg-[#8a816d] text-white rounded-lg hover:shadow-lg transition-all duration-300 font-semibold text-sm h-10 whitespace-nowrap"
+                        className="flex items-center justify-center px-2 py-1 bg-[#9c9387] hover:bg-[#8a816d] text-white rounded-lg hover:shadow-lg transition-all duration-300 font-semibold text-xs h-9 whitespace-nowrap"
                         data-testid={`link-${dashboard.id}`}
                         title={dashboard.name}
                       >
-                        <ExternalLink className="mr-1.5 h-4 w-4 flex-shrink-0" />
+                        <ExternalLink className="mr-1 h-3.5 w-3.5 flex-shrink-0" />
                         <span>Åbn</span>
                       </button>
                     ) : (
-                      <div className="flex items-center justify-center px-3 py-2 bg-gray-100 text-gray-500 rounded-lg text-sm h-10">
+                      <div className="flex items-center justify-center px-2 py-1 bg-gray-100 text-gray-500 rounded-lg text-xs h-9">
                         <span className="text-xs">URL mangler</span>
                       </div>
                     )}
