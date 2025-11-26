@@ -6,7 +6,7 @@ export default function Navigation() {
 
   const navItems = [
     { path: "/", label: "Ledelsesfokus", icon: Focus },
-    { path: "/powerbi", label: "Power BI Rapporter", icon: BarChart3 },
+    { path: "/powerbi", label: "Data", icon: BarChart3 },
   ];
 
   return (
