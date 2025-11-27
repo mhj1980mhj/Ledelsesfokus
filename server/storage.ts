@@ -51,24 +51,7 @@ export class DatabaseStorage implements IStorage {
     if (this.isInitialized) return;
     
     try {
-      // Check if we have ANY dashboards in the database
-      const existingDashboards = await db.select().from(powerBIDashboards);
-      
-      // Only initialize if the database is completely empty
-      if (existingDashboards.length === 0) {
-        // Insert only the main dashboard - remove sample data
-        const defaultDashboards = [
-          {
-            name: "Beboerundersøgelse",
-            url: "https://app.powerbi.com/reportEmbed?reportId=0772dd9a-24d5-4c64-917e-d50287fcca79&autoAuth=true&ctid=a917771d-94b6-4ac6-8b4f-0d496cfb0e43",
-            description: "Analyse af beboertilfredshed og demografi",
-            category: "Beboeranalyse",
-          }
-        ];
-
-        await db.insert(powerBIDashboards).values(defaultDashboards);
-      }
-      
+      // No default data initialization - all dashboards must be created manually
       this.isInitialized = true;
     } catch (error) {
       console.error("Error initializing default data:", error);
