@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Settings, Plus, Calendar, ArrowUpDown, Clock, ExternalLink, Trash2, ArrowLeft, ChevronDown, Check, Archive, ArchiveRestore } from "lucide-react";
+import { Search, Settings, Plus, Calendar, ArrowUpDown, Clock, ExternalLink, Trash2, ArrowLeft, ChevronDown, Check, Archive, ArchiveRestore, Folder, File, FileText, List, Globe, ChevronRight, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -32,6 +32,42 @@ type PowerBIDashboard = {
 
 type SortOption = "latest" | "alphabetical";
 
+type SharePointSite = {
+  id: string;
+  name: string;
+  displayName: string;
+  webUrl: string;
+};
+
+type SharePointDrive = {
+  id: string;
+  name: string;
+  webUrl: string;
+};
+
+type SharePointItem = {
+  id: string;
+  name: string;
+  webUrl: string;
+  folder?: { childCount: number };
+  file?: { mimeType: string };
+  size?: number;
+  lastModifiedDateTime?: string;
+};
+
+type SharePointList = {
+  id: string;
+  name: string;
+  displayName: string;
+  webUrl: string;
+};
+
+type BreadcrumbItem = {
+  id: string;
+  name: string;
+  type: "site" | "drive" | "folder" | "list";
+};
+
 const formSchema = insertPowerBIDashboardSchema.extend({
   url: z.string().url("Indtast venligst en gyldig URL"),
   type: z.enum(["power-bi", "microsoft-lists", "sharepoint-folder"]).default("power-bi"),
@@ -54,6 +90,14 @@ export default function PowerBI({ onLogout, isAdmin = false }: PowerBIProps) {
   const [selectedType, setSelectedType] = useState<"power-bi" | "microsoft-lists" | "sharepoint-folder">("power-bi");
   const [showArchived, setShowArchived] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ type: "archive" | "delete" | "permanent-delete" | null, dashboardId?: string }>({ type: null });
+  
+  // SharePoint browser state
+  const [selectedSite, setSelectedSite] = useState<SharePointSite | null>(null);
+  const [selectedDrive, setSelectedDrive] = useState<SharePointDrive | null>(null);
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([]);
+  const [showSharePointBrowser, setShowSharePointBrowser] = useState(false);
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -83,6 +127,50 @@ export default function PowerBI({ onLogout, isAdmin = false }: PowerBIProps) {
     queryKey: ["/api/dashboards"],
     retry: 3,
     staleTime: 30000
+  });
+
+  // SharePoint queries
+  const { data: sharePointSites = [], isLoading: isLoadingSites, refetch: refetchSites } = useQuery<SharePointSite[]>({
+    queryKey: ["/api/sharepoint/sites"],
+    enabled: showSharePointBrowser,
+    retry: 2,
+    staleTime: 60000
+  });
+
+  const { data: siteDrives = [], isLoading: isLoadingDrives } = useQuery<SharePointDrive[]>({
+    queryKey: ["/api/sharepoint/sites", selectedSite?.id, "drives"],
+    queryFn: async () => {
+      if (!selectedSite?.id) return [];
+      const response = await fetch(`/api/sharepoint/sites/${selectedSite.id}/drives`);
+      if (!response.ok) throw new Error("Failed to fetch drives");
+      return response.json();
+    },
+    enabled: !!selectedSite?.id && showSharePointBrowser
+  });
+
+  const { data: siteLists = [], isLoading: isLoadingLists } = useQuery<SharePointList[]>({
+    queryKey: ["/api/sharepoint/sites", selectedSite?.id, "lists"],
+    queryFn: async () => {
+      if (!selectedSite?.id) return [];
+      const response = await fetch(`/api/sharepoint/sites/${selectedSite.id}/lists`);
+      if (!response.ok) throw new Error("Failed to fetch lists");
+      return response.json();
+    },
+    enabled: !!selectedSite?.id && showSharePointBrowser
+  });
+
+  const { data: driveItems = [], isLoading: isLoadingItems } = useQuery<SharePointItem[]>({
+    queryKey: ["/api/sharepoint/sites", selectedSite?.id, "drives", selectedDrive?.id, "items", currentFolderId],
+    queryFn: async () => {
+      if (!selectedSite?.id || !selectedDrive?.id) return [];
+      const url = currentFolderId 
+        ? `/api/sharepoint/sites/${selectedSite.id}/drives/${selectedDrive.id}/items?folderId=${currentFolderId}`
+        : `/api/sharepoint/sites/${selectedSite.id}/drives/${selectedDrive.id}/items`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch items");
+      return response.json();
+    },
+    enabled: !!selectedSite?.id && !!selectedDrive?.id && showSharePointBrowser
   });
 
   // Get unique categories from active dashboards only
@@ -217,6 +305,58 @@ export default function PowerBI({ onLogout, isAdmin = false }: PowerBIProps) {
   const truncateTitle = (title: string, maxLength: number = 30) => {
     if (title.length <= maxLength) return title;
     return title.substring(0, maxLength).trim() + "...";
+  };
+
+  // SharePoint navigation helpers
+  const handleSelectSite = (site: SharePointSite) => {
+    setSelectedSite(site);
+    setSelectedDrive(null);
+    setCurrentFolderId(null);
+    setBreadcrumbs([{ id: site.id, name: site.displayName || site.name, type: "site" }]);
+  };
+
+  const handleSelectDrive = (drive: SharePointDrive) => {
+    setSelectedDrive(drive);
+    setCurrentFolderId(null);
+    setBreadcrumbs(prev => [...prev.filter(b => b.type === "site"), { id: drive.id, name: drive.name, type: "drive" }]);
+  };
+
+  const handleNavigateToFolder = (item: SharePointItem) => {
+    if (item.folder) {
+      setCurrentFolderId(item.id);
+      setBreadcrumbs(prev => [...prev, { id: item.id, name: item.name, type: "folder" }]);
+    } else if (item.webUrl) {
+      window.open(item.webUrl, "_blank");
+    }
+  };
+
+  const handleBreadcrumbClick = (index: number) => {
+    const clickedBreadcrumb = breadcrumbs[index];
+    if (clickedBreadcrumb.type === "site") {
+      setSelectedDrive(null);
+      setCurrentFolderId(null);
+      setBreadcrumbs([clickedBreadcrumb]);
+    } else if (clickedBreadcrumb.type === "drive") {
+      setCurrentFolderId(null);
+      setBreadcrumbs(breadcrumbs.slice(0, index + 1));
+    } else if (clickedBreadcrumb.type === "folder") {
+      setCurrentFolderId(clickedBreadcrumb.id);
+      setBreadcrumbs(breadcrumbs.slice(0, index + 1));
+    }
+  };
+
+  const resetSharePointBrowser = () => {
+    setSelectedSite(null);
+    setSelectedDrive(null);
+    setCurrentFolderId(null);
+    setBreadcrumbs([]);
+  };
+
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return "";
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   const filteredAndSortedDashboards = useMemo(() => {
@@ -1196,6 +1336,239 @@ export default function PowerBI({ onLogout, isAdmin = false }: PowerBIProps) {
             </div>
           </div>
         )}
+
+          {/* SharePoint Browser Section */}
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-semibold text-gray-900">SharePoint</h2>
+              <Button
+                variant={showSharePointBrowser ? "default" : "outline"}
+                onClick={() => {
+                  setShowSharePointBrowser(!showSharePointBrowser);
+                  if (!showSharePointBrowser) {
+                    resetSharePointBrowser();
+                  }
+                }}
+                className={showSharePointBrowser ? "bg-[#9c9387] hover:bg-[#8a816d] text-white" : ""}
+                data-testid="button-toggle-sharepoint"
+              >
+                <Globe className="mr-2 h-4 w-4" />
+                {showSharePointBrowser ? "Luk SharePoint" : "Åbn SharePoint"}
+              </Button>
+            </div>
+
+            {showSharePointBrowser && (
+              <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 shadow-lg">
+                {/* Breadcrumbs */}
+                {breadcrumbs.length > 0 && (
+                  <div className="flex items-center gap-2 mb-4 text-sm text-gray-600 flex-wrap">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={resetSharePointBrowser}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <Globe className="h-4 w-4" />
+                    </Button>
+                    {breadcrumbs.map((crumb, index) => (
+                      <div key={crumb.id} className="flex items-center">
+                        <ChevronRight className="h-4 w-4 text-gray-400" />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleBreadcrumbClick(index)}
+                          className="text-gray-600 hover:text-gray-900"
+                        >
+                          {crumb.name}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Site Selection */}
+                {!selectedSite && (
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-medium text-gray-800">Vælg SharePoint Site</h3>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => refetchSites()}
+                        disabled={isLoadingSites}
+                      >
+                        <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingSites ? "animate-spin" : ""}`} />
+                        Opdater
+                      </Button>
+                    </div>
+                    {isLoadingSites ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {[...Array(6)].map((_, i) => (
+                          <div key={i} className="bg-gray-100 rounded-lg p-4 animate-pulse">
+                            <div className="h-5 bg-gray-200 rounded mb-2"></div>
+                            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : sharePointSites.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <Globe className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                        <p>Ingen SharePoint sites fundet</p>
+                        <p className="text-sm">Kontroller din SharePoint-forbindelse</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {sharePointSites.map((site) => (
+                          <button
+                            key={site.id}
+                            onClick={() => handleSelectSite(site)}
+                            className="text-left bg-white border border-gray-200 rounded-lg p-4 hover:border-[#9c9387] hover:shadow-md transition-all"
+                            data-testid={`sharepoint-site-${site.id}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Globe className="h-8 w-8 text-[#9c9387]" />
+                              <div>
+                                <h4 className="font-medium text-gray-900">{site.displayName || site.name}</h4>
+                                <p className="text-sm text-gray-500 truncate">{site.webUrl}</p>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Drive/List Selection */}
+                {selectedSite && !selectedDrive && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-800 mb-4">Vælg dokumentbibliotek eller liste</h3>
+                    
+                    {/* Document Libraries */}
+                    <div className="mb-6">
+                      <h4 className="text-sm font-medium text-gray-600 mb-3">Dokumentbiblioteker</h4>
+                      {isLoadingDrives ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {[...Array(3)].map((_, i) => (
+                            <div key={i} className="bg-gray-100 rounded-lg p-4 animate-pulse">
+                              <div className="h-5 bg-gray-200 rounded"></div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : siteDrives.length === 0 ? (
+                        <p className="text-gray-500 text-sm">Ingen dokumentbiblioteker fundet</p>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {siteDrives.map((drive) => (
+                            <button
+                              key={drive.id}
+                              onClick={() => handleSelectDrive(drive)}
+                              className="text-left bg-white border border-gray-200 rounded-lg p-4 hover:border-[#9c9387] hover:shadow-md transition-all"
+                              data-testid={`sharepoint-drive-${drive.id}`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <Folder className="h-6 w-6 text-yellow-500" />
+                                <span className="font-medium text-gray-900">{drive.name}</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Lists */}
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-600 mb-3">Lister</h4>
+                      {isLoadingLists ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {[...Array(3)].map((_, i) => (
+                            <div key={i} className="bg-gray-100 rounded-lg p-4 animate-pulse">
+                              <div className="h-5 bg-gray-200 rounded"></div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : siteLists.length === 0 ? (
+                        <p className="text-gray-500 text-sm">Ingen lister fundet</p>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {siteLists.map((list) => (
+                            <a
+                              key={list.id}
+                              href={list.webUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-left bg-white border border-gray-200 rounded-lg p-4 hover:border-[#9c9387] hover:shadow-md transition-all"
+                              data-testid={`sharepoint-list-${list.id}`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <List className="h-6 w-6 text-blue-500" />
+                                <span className="font-medium text-gray-900">{list.displayName || list.name}</span>
+                                <ExternalLink className="h-4 w-4 text-gray-400 ml-auto" />
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* File Browser */}
+                {selectedSite && selectedDrive && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-800 mb-4">Filer og mapper</h3>
+                    {isLoadingItems ? (
+                      <div className="space-y-2">
+                        {[...Array(5)].map((_, i) => (
+                          <div key={i} className="bg-gray-100 rounded-lg p-3 animate-pulse">
+                            <div className="h-5 bg-gray-200 rounded w-1/2"></div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : driveItems.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <Folder className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                        <p>Denne mappe er tom</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {driveItems
+                          .sort((a, b) => {
+                            if (a.folder && !b.folder) return -1;
+                            if (!a.folder && b.folder) return 1;
+                            return a.name.localeCompare(b.name);
+                          })
+                          .map((item) => (
+                            <button
+                              key={item.id}
+                              onClick={() => handleNavigateToFolder(item)}
+                              className="w-full text-left bg-white border border-gray-200 rounded-lg p-3 hover:border-[#9c9387] hover:shadow-md transition-all flex items-center gap-3"
+                              data-testid={`sharepoint-item-${item.id}`}
+                            >
+                              {item.folder ? (
+                                <Folder className="h-5 w-5 text-yellow-500 flex-shrink-0" />
+                              ) : (
+                                <FileText className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                              )}
+                              <span className="font-medium text-gray-900 flex-grow truncate">{item.name}</span>
+                              {item.folder && (
+                                <span className="text-sm text-gray-400">{item.folder.childCount} elementer</span>
+                              )}
+                              {item.file && item.size && (
+                                <span className="text-sm text-gray-400">{formatFileSize(item.size)}</span>
+                              )}
+                              {!item.folder && (
+                                <ExternalLink className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                              )}
+                            </button>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>
