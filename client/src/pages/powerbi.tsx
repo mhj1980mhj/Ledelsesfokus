@@ -1168,33 +1168,21 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                         </span>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      {dashboard.url ? (
-                        <button
-                          onClick={() => handleEmbedDashboard(dashboard)}
-                          className="inline-flex items-center px-4 py-1.5 bg-[#9c9387] hover:bg-[#8a816d] text-white rounded-lg hover:shadow-lg transition-all duration-300 font-medium text-sm"
-                          data-testid={`link-${dashboard.id}`}
-                          title={dashboard.name}
-                        >
-                          <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-                          <span>Åbn</span>
-                        </button>
-                      ) : (
-                        <div className="inline-flex items-center px-4 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-sm">
-                          <span>URL mangler</span>
-                        </div>
-                      )}
-                      {showArchived && (
-                        <button
-                          onClick={() => setConfirmAction({ type: "permanent-delete", dashboardId: dashboard.id })}
-                          className="inline-flex items-center px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-all duration-300 font-medium text-sm"
-                          data-testid={`permanent-delete-${dashboard.id}`}
-                          title="Slet permanent"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                    </div>
+                    {dashboard.url ? (
+                      <button
+                        onClick={() => handleEmbedDashboard(dashboard)}
+                        className="inline-flex items-center px-4 py-1.5 bg-[#9c9387] hover:bg-[#8a816d] text-white rounded-lg hover:shadow-lg transition-all duration-300 font-medium text-sm"
+                        data-testid={`link-${dashboard.id}`}
+                        title={dashboard.name}
+                      >
+                        <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                        <span>Åbn</span>
+                      </button>
+                    ) : (
+                      <div className="inline-flex items-center px-4 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-sm">
+                        <span>URL mangler</span>
+                      </div>
+                    )}
                   </div>
                 </DashboardCard>
               ))}
