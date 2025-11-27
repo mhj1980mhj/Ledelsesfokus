@@ -131,6 +131,8 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
 
   const [projectDialog, setProjectDialog] = useState({ open: false, id: null as string | null, name: "", color: "#9c9387", area: "", ansvarlig: "", description: "", startMonth: todayIdx, endMonth: null as number | null });
   const [segmentDialog, setSegmentDialog] = useState({ open: false, projectId: null as string | null, id: null as string | null, label: "", start: todayIdx, end: todayIdx, description: "" });
+  const [segmentDeleteConfirm, setSegmentDeleteConfirm] = useState({ open: false, segmentId: "", label: "" });
+  const [segmentDeleteText, setSegmentDeleteText] = useState("");
   const [tooltip, setTooltip] = useState({ show: false, x: 0, y: 0, content: null as React.ReactNode | null });
   const [drag, setDrag] = useState(null as any);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -399,10 +401,16 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
     }
   }
 
-  function deleteSegment(segId: string) {
-    if (window.confirm("Er du sikker på, at du vil slette dette segment?")) {
-      deleteSegmentMutation.mutate(segId);
-    }
+  function deleteSegment(segId: string, label: string) {
+    setSegmentDeleteConfirm({ open: true, segmentId: segId, label });
+    setSegmentDeleteText("");
+  }
+
+  function handleDeleteSegmentConfirm() {
+    if (segmentDeleteText.toLowerCase() !== "slet") return;
+    deleteSegmentMutation.mutate(segmentDeleteConfirm.segmentId);
+    setSegmentDeleteConfirm({ open: false, segmentId: "", label: "" });
+    setSegmentDeleteText("");
   }
 
   function onSegmentMouseDown(e: React.MouseEvent, prj: any, seg: any, mode: string) {
@@ -922,7 +930,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
         <div className="flex items-center justify-between gap-3 border-t px-5 py-3">
           {segmentDialog.id && (
             <button 
-              onClick={() => segmentDialog.id && deleteSegment(segmentDialog.id)} 
+              onClick={() => segmentDialog.id && deleteSegment(segmentDialog.id, segmentDialog.label)} 
               className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-red-600 hover:bg-red-100"
               data-testid="button-delete-segment"
             >
@@ -947,6 +955,55 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
               Gem
             </button>
           </div>
+        </div>
+      </Modal>
+
+      <Modal open={segmentDeleteConfirm.open} onClose={() => {
+        setSegmentDeleteConfirm({ open: false, segmentId: "", label: "" });
+        setSegmentDeleteText("");
+      }}>
+        <ModalHeader title="Slet segment" onClose={() => {
+          setSegmentDeleteConfirm({ open: false, segmentId: "", label: "" });
+          setSegmentDeleteText("");
+        }} />
+        <div className="flex flex-col gap-4 px-5 py-3">
+          <div className="space-y-3">
+            <span className="block text-sm">
+              Er du sikker på, at du vil slette segmentet "<span className="font-medium">{segmentDeleteConfirm.label}</span>"?
+            </span>
+            <span className="block text-sm">
+              Skriv <span className="font-bold">"slet"</span> for at bekræfte.
+            </span>
+          </div>
+          <input
+            type="text"
+            placeholder='Skriv "slet" for at bekræfte'
+            value={segmentDeleteText}
+            onChange={(e) => setSegmentDeleteText(e.target.value)}
+            className="w-full rounded-xl border px-3 py-2 outline-none ring-0 focus:border-slate-400"
+            data-testid="input-segment-delete-confirm"
+          />
+        </div>
+        <div className="flex items-center justify-end gap-3 border-t px-5 py-3">
+          <button
+            onClick={() => {
+              setSegmentDeleteConfirm({ open: false, segmentId: "", label: "" });
+              setSegmentDeleteText("");
+            }}
+            className="rounded-xl border bg-white px-3 py-2"
+            data-testid="button-cancel-segment-delete"
+          >
+            Annuller
+          </button>
+          <button
+            onClick={handleDeleteSegmentConfirm}
+            disabled={segmentDeleteText.toLowerCase() !== "slet" || deleteSegmentMutation.isPending}
+            className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-red-600 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            data-testid="button-confirm-segment-delete"
+          >
+            <Trash2 className="h-4 w-4" />
+            {deleteSegmentMutation.isPending ? "Sletter..." : "Slet segment"}
+          </button>
         </div>
       </Modal>
     </>
