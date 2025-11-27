@@ -45,10 +45,10 @@ export default function DashboardCard({
       className="dashboard-card bg-white/70 backdrop-blur-xl rounded-xl p-4 border border-gray-200/50 shadow-lg"
       data-testid={testId}
     >
-      <div className="flex items-center justify-between mb-3" data-testid="card-header">
-        <div className="flex items-center gap-2 min-w-0">
-          {typeIcon}
-          <h3 className="text-base font-semibold text-gray-800 line-clamp-1" data-testid="card-title" title={title}>
+      <div className="flex items-start justify-between mb-3" data-testid="card-header">
+        <div className="flex items-start gap-2 min-w-0">
+          <div className="flex-shrink-0 mt-0.5">{typeIcon}</div>
+          <h3 className="text-base font-semibold text-gray-800 line-clamp-2 min-h-[2.8rem]" data-testid="card-title" title={title}>
             {title}
           </h3>
         </div>
