@@ -309,8 +309,8 @@ export default function ManagementFocus({ onLogout, pinnedLinks, setPinnedLinks 
                 Er du sikker på, at du vil slette området "{deleteConfirmDialog.areaName}"?
               </span>
               {deleteConfirmDialog.projectCount > 0 && (
-                <span className="block text-red-600 font-medium">
-                  Dette vil også slette {deleteConfirmDialog.projectCount} projekt{deleteConfirmDialog.projectCount > 1 ? 'er' : ''} og alle deres segmenter!
+                <span className="block text-red-600 font-bold text-lg bg-red-50 p-3 rounded-lg border border-red-200">
+                  ⚠️ BEMÆRK: Dette vil SLETTE {deleteConfirmDialog.projectCount} PROJEKT{deleteConfirmDialog.projectCount > 1 ? 'ER' : ''} og alle deres segmenter!
                 </span>
               )}
               <span className="block">
