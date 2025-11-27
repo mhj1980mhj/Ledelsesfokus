@@ -114,8 +114,8 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/dashboards"] });
       toast({
-        title: "Success!",
-        description: "Dashboard er tilføjet med succes"
+        title: "Tilføjet!",
+        description: "Ressource er tilføjet"
       });
       setIsAddDialogOpen(false);
       form.reset();
@@ -282,7 +282,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 to-neutral-100 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Kunne ikke indlæse dashboards</h2>
           <p className="text-gray-600">Der opstod en fejl ved indlæsning af data.</p>
@@ -294,7 +294,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
   // If viewing a dashboard, show full screen view
   if (viewingDashboard) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 to-neutral-100">
         {/* Header with back button */}
         <header className="bg-white/80 backdrop-blur-xl border-b border-gray-200/50 shadow-sm sticky top-0 z-40">
           <div className="max-w-7xl mx-auto px-8 py-4">
@@ -557,7 +557,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-stone-50 to-neutral-100">
       <PageHeader title="Data" subtitle="Analytiske dashboards og Microsoft Lists" onLogout={onLogout} />
       <Navigation />
 

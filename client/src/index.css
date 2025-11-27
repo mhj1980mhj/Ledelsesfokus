@@ -10,7 +10,7 @@
   --card-foreground: hsl(210 25% 7.8431%);
   --popover: hsl(0 0% 100%);
   --popover-foreground: hsl(210 25% 7.8431%);
-  --primary: hsl(217.2 91.2% 59.8%);
+  --primary: hsl(30 6% 56%);
   --primary-foreground: hsl(0 0% 100%);
   --secondary: hsl(210 25% 7.8431%);
   --secondary-foreground: hsl(0 0% 100%);
@@ -117,8 +117,8 @@
   }
 
   .glossy-btn {
-    background: linear-gradient(145deg, #3b82f6, #2563eb);
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    background: linear-gradient(145deg, #9c9387, #8a816d);
+    box-shadow: 0 4px 15px rgba(156, 147, 135, 0.3);
     position: relative;
     overflow: hidden;
   }
@@ -154,12 +154,12 @@
   }
 
   .nav-item:hover {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(14, 165, 233, 0.1));
+    background: linear-gradient(135deg, rgba(156, 147, 135, 0.1), rgba(138, 129, 109, 0.1));
     transform: translateX(8px);
   }
 
   .nav-item.active {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    background: linear-gradient(135deg, #9c9387, #8a816d);
     color: white;
   }
 

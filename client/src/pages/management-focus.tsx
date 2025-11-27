@@ -147,7 +147,7 @@ export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-stone-50 to-neutral-100">
       <PageHeader title="Ledelsesfokus" subtitle="Projektoverblik" onLogout={onLogout} />
       <Navigation />
 
