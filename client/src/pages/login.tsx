@@ -8,7 +8,7 @@ import { Eye, EyeOff } from "lucide-react";
 import logoImage from "@assets/ChatGPT Image 24. aug. 2025, 16.38.56_1756046355129.png";
 
 interface LoginProps {
-  onLogin: () => void;
+  onLogin: (isAdmin: boolean) => void;
 }
 
 export default function Login({ onLogin }: LoginProps) {
@@ -25,14 +25,25 @@ export default function Login({ onLogin }: LoginProps) {
     // Simple delay to make it feel more authentic
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    if (username === "AL2bolig" && password === "AL2bedst") {
-      // Store login status in localStorage
+    // Check for admin user
+    if (username === "admin" && password === "AL2bedst") {
       localStorage.setItem("al2bolig_authenticated", "true");
+      localStorage.setItem("al2bolig_user_role", "admin");
+      toast({
+        title: "Velkommen, Administrator!",
+        description: "Du er nu logget ind som admin."
+      });
+      onLogin(true);
+    }
+    // Check for regular user
+    else if (username === "AL2bolig" && password === "AL2bedst") {
+      localStorage.setItem("al2bolig_authenticated", "true");
+      localStorage.setItem("al2bolig_user_role", "user");
       toast({
         title: "Velkommen!",
         description: "Du er nu logget ind."
       });
-      onLogin();
+      onLogin(false);
     } else {
       toast({
         title: "Login fejlede",

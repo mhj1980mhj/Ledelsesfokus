@@ -9,9 +9,10 @@ import PowerBI from "@/pages/powerbi";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
-function Router({ isAuthenticated, onLogin, onLogout }: { 
+function Router({ isAuthenticated, isAdmin, onLogin, onLogout }: { 
   isAuthenticated: boolean;
-  onLogin: () => void;
+  isAdmin: boolean;
+  onLogin: (isAdmin: boolean) => void;
   onLogout: () => void;
 }) {
   if (!isAuthenticated) {
@@ -20,7 +21,7 @@ function Router({ isAuthenticated, onLogin, onLogout }: {
 
   return (
     <Switch>
-      <Route path="/" component={() => <PowerBI onLogout={onLogout} />} />
+      <Route path="/" component={() => <PowerBI onLogout={onLogout} isAdmin={isAdmin} />} />
       <Route path="/ledelsesfokus" component={() => <ManagementFocus onLogout={onLogout} />} />
       <Route component={NotFound} />
     </Switch>
@@ -29,21 +30,27 @@ function Router({ isAuthenticated, onLogin, onLogout }: {
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const authStatus = localStorage.getItem("al2bolig_authenticated");
+    const userRole = localStorage.getItem("al2bolig_user_role");
     if (authStatus === "true") {
       setIsAuthenticated(true);
+      setIsAdmin(userRole === "admin");
     }
   }, []);
 
-  const handleLogin = () => {
+  const handleLogin = (adminStatus: boolean) => {
     setIsAuthenticated(true);
+    setIsAdmin(adminStatus);
   };
 
   const handleLogout = () => {
     localStorage.removeItem("al2bolig_authenticated");
+    localStorage.removeItem("al2bolig_user_role");
     setIsAuthenticated(false);
+    setIsAdmin(false);
   };
 
   return (
@@ -51,7 +58,8 @@ function App() {
       <TooltipProvider>
         <Toaster />
         <Router 
-          isAuthenticated={isAuthenticated} 
+          isAuthenticated={isAuthenticated}
+          isAdmin={isAdmin}
           onLogin={handleLogin} 
           onLogout={handleLogout}
         />
