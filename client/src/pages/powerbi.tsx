@@ -52,7 +52,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
   const [viewingDashboard, setViewingDashboard] = useState<PowerBIDashboard | null>(null);
   const [selectedType, setSelectedType] = useState<"power-bi" | "microsoft-lists" | "sharepoint-folder">("power-bi");
   const [showArchived, setShowArchived] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<{ type: "archive" | "delete" | null, dashboardId?: string }>({ type: null });
+  const [confirmAction, setConfirmAction] = useState<{ type: "archive" | "delete" | "permanent-delete" | null, dashboardId?: string }>({ type: null });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -184,6 +184,31 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
         variant: "destructive"
       });
       console.error("Error deleting dashboard:", error);
+    }
+  });
+
+  const permanentDeleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/dashboards/${id}/permanent`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to permanently delete dashboard");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboards"] });
+      toast({
+        title: "Permanent slettet!",
+        description: "Ressourcen er fjernet permanent fra systemet"
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Fejl",
+        description: "Kunne ikke slette permanent. Prøv igen.",
+        variant: "destructive"
+      });
+      console.error("Error permanently deleting dashboard:", error);
     }
   });
 
@@ -1018,14 +1043,16 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
               </DialogContent>
             </Dialog>
 
-            <AlertDialog open={confirmAction.type === "archive" || confirmAction.type === "delete"} onOpenChange={() => setConfirmAction({ type: null })}>
+            <AlertDialog open={confirmAction.type === "archive" || confirmAction.type === "delete" || confirmAction.type === "permanent-delete"} onOpenChange={() => setConfirmAction({ type: null })}>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>
-                    {confirmAction.type === "delete" ? "Slet ressource?" : editingDashboard?.isActive === 0 ? "Gendan ressource?" : "Arkiver ressource?"}
+                    {confirmAction.type === "permanent-delete" ? "Slet permanent?" : confirmAction.type === "delete" ? "Slet ressource?" : editingDashboard?.isActive === 0 ? "Gendan ressource?" : "Arkiver ressource?"}
                   </AlertDialogTitle>
                   <AlertDialogDescription>
-                    {confirmAction.type === "delete" 
+                    {confirmAction.type === "permanent-delete"
+                      ? "Dette kan IKKE fortrydes! Ressourcen fjernes helt fra databasen."
+                      : confirmAction.type === "delete" 
                       ? "Dette kan ikke fortrydes. Ressourcen slettes permanent."
                       : editingDashboard?.isActive === 0 
                       ? "Ressourcen vil blive gjort aktiv igen og vises på siden."
@@ -1036,7 +1063,10 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                   <AlertDialogCancel>Annuller</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={async () => {
-                      if (confirmAction.type === "delete" && editingDashboard) {
+                      if (confirmAction.type === "permanent-delete" && confirmAction.dashboardId) {
+                        permanentDeleteMutation.mutate(confirmAction.dashboardId);
+                        setConfirmAction({ type: null });
+                      } else if (confirmAction.type === "delete" && editingDashboard) {
                         handleDeleteDashboard();
                       } else if (confirmAction.type === "archive" && editingDashboard) {
                         try {
@@ -1062,9 +1092,9 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                         }
                       }
                     }}
-                    className={confirmAction.type === "delete" ? "bg-red-600 hover:bg-red-700" : "bg-[#9c9387] hover:bg-[#8a816d]"}
+                    className={confirmAction.type === "permanent-delete" || confirmAction.type === "delete" ? "bg-red-600 hover:bg-red-700" : "bg-[#9c9387] hover:bg-[#8a816d]"}
                   >
-                    {confirmAction.type === "delete" ? "Slet" : editingDashboard?.isActive === 0 ? "Gendan" : "Arkiver"}
+                    {confirmAction.type === "permanent-delete" ? "Slet permanent" : confirmAction.type === "delete" ? "Slet" : editingDashboard?.isActive === 0 ? "Gendan" : "Arkiver"}
                   </AlertDialogAction>
                 </div>
               </AlertDialogContent>
@@ -1138,21 +1168,33 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                         </span>
                       </div>
                     </div>
-                    {dashboard.url ? (
-                      <button
-                        onClick={() => handleEmbedDashboard(dashboard)}
-                        className="inline-flex items-center px-4 py-1.5 bg-[#9c9387] hover:bg-[#8a816d] text-white rounded-lg hover:shadow-lg transition-all duration-300 font-medium text-sm"
-                        data-testid={`link-${dashboard.id}`}
-                        title={dashboard.name}
-                      >
-                        <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-                        <span>Åbn</span>
-                      </button>
-                    ) : (
-                      <div className="inline-flex items-center px-4 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-sm">
-                        <span>URL mangler</span>
-                      </div>
-                    )}
+                    <div className="flex gap-2">
+                      {dashboard.url ? (
+                        <button
+                          onClick={() => handleEmbedDashboard(dashboard)}
+                          className="inline-flex items-center px-4 py-1.5 bg-[#9c9387] hover:bg-[#8a816d] text-white rounded-lg hover:shadow-lg transition-all duration-300 font-medium text-sm"
+                          data-testid={`link-${dashboard.id}`}
+                          title={dashboard.name}
+                        >
+                          <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                          <span>Åbn</span>
+                        </button>
+                      ) : (
+                        <div className="inline-flex items-center px-4 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-sm">
+                          <span>URL mangler</span>
+                        </div>
+                      )}
+                      {showArchived && (
+                        <button
+                          onClick={() => setConfirmAction({ type: "permanent-delete", dashboardId: dashboard.id })}
+                          className="inline-flex items-center px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-all duration-300 font-medium text-sm"
+                          data-testid={`permanent-delete-${dashboard.id}`}
+                          title="Slet permanent"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </DashboardCard>
               ))}

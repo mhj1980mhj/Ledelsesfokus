@@ -150,6 +150,20 @@ router.delete("/api/dashboards/:id", async (req: Request, res: Response) => {
   }
 });
 
+router.delete("/api/dashboards/:id/permanent", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const success = await storage.permanentlyDeleteDashboard(id);
+    if (!success) {
+      return res.status(404).json({ error: "Dashboard not found" });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error permanently deleting dashboard:", error);
+    res.status(500).json({ error: "Failed to permanently delete dashboard" });
+  }
+});
+
 // Project Routes
 router.get("/api/projects", async (req: Request, res: Response) => {
   try {

@@ -22,6 +22,7 @@ export interface IStorage {
   createDashboard(dashboard: InsertPowerBIDashboard): Promise<PowerBIDashboard>;
   updateDashboard(id: string, dashboard: Partial<InsertPowerBIDashboard>): Promise<PowerBIDashboard | null>;
   deleteDashboard(id: string): Promise<boolean>;
+  permanentlyDeleteDashboard(id: string): Promise<boolean>;
   
   // Projects
   getAllProjects(): Promise<Project[]>;
@@ -157,6 +158,13 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .update(powerBIDashboards)
       .set({ isActive: 0 })
+      .where(eq(powerBIDashboards.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async permanentlyDeleteDashboard(id: string): Promise<boolean> {
+    const result = await db
+      .delete(powerBIDashboards)
       .where(eq(powerBIDashboards.id, id));
     return (result.rowCount ?? 0) > 0;
   }
