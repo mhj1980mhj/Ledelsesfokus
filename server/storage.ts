@@ -155,9 +155,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteDashboard(id: string): Promise<boolean> {
+    // First get the current dashboard to check its status
+    const [dashboard] = await db
+      .select()
+      .from(powerBIDashboards)
+      .where(eq(powerBIDashboards.id, id));
+    
+    if (!dashboard) return false;
+    
+    // Toggle isActive: if it's 1 (active), set to 0 (archive); if it's 0 (archived), set to 1 (restore)
+    const newIsActive = dashboard.isActive === 0 ? 1 : 0;
+    
     const result = await db
       .update(powerBIDashboards)
-      .set({ isActive: 0 })
+      .set({ isActive: newIsActive })
       .where(eq(powerBIDashboards.id, id));
     return (result.rowCount ?? 0) > 0;
   }
