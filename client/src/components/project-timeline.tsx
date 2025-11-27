@@ -159,7 +159,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
       return { previousProjects };
     },
     onSuccess: () => {
-      setProjectDialog({ ...projectDialog, open: false });
+      setProjectDialog(p => ({ ...p, open: false }));
       toast({ title: "Projekt oprettet", description: "Dit projekt er blevet oprettet succesfuldt." });
     },
     onError: (_error, _variables, context: any) => {
@@ -184,7 +184,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
       return { previousProjects };
     },
     onSuccess: () => {
-      setProjectDialog({ ...projectDialog, open: false });
+      setProjectDialog(p => ({ ...p, open: false }));
       toast({ title: "Projekt opdateret", description: "Projektet er blevet opdateret succesfuldt." });
     },
     onError: (_error, _variables, context: any) => {
@@ -207,7 +207,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
       return { previousProjects };
     },
     onSuccess: () => {
-      setProjectDialog({ ...projectDialog, open: false });
+      setProjectDialog(p => ({ ...p, open: false }));
       toast({ title: "Projekt slettet", description: "Projektet er blevet slettet succesfuldt." });
     },
     onError: (_error, _variables, context: any) => {
@@ -234,7 +234,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
       return { previousProjects };
     },
     onSuccess: () => {
-      setSegmentDialog({ ...segmentDialog, open: false });
+      setSegmentDialog(s => ({ ...s, open: false }));
       toast({ title: "Segment oprettet", description: "Segmentet er blevet oprettet succesfuldt." });
     },
     onError: (error: any, _variables, context: any) => {
@@ -263,7 +263,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
     },
     onSuccess: (_data, variables) => {
       if (variables.showToast) {
-        setSegmentDialog({ ...segmentDialog, open: false });
+        setSegmentDialog(s => ({ ...s, open: false }));
         toast({ title: "Segment opdateret", description: "Segmentet er blevet opdateret succesfuldt." });
       }
     },
@@ -294,7 +294,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
       return { previousProjects };
     },
     onSuccess: () => {
-      setSegmentDialog({ ...segmentDialog, open: false });
+      setSegmentDialog(s => ({ ...s, open: false }));
       toast({ title: "Segment slettet", description: "Segmentet er blevet slettet succesfuldt." });
     },
     onError: (_error, _variables, context: any) => {
