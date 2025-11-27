@@ -129,7 +129,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
     queryKey: ["/api/areas"],
   });
 
-  const [projectDialog, setProjectDialog] = useState({ open: false, id: null as string | null, name: "", color: "#9c9387", area: "", ansvarlig: "", description: "", startMonth: todayIdx, endMonth: todayIdx });
+  const [projectDialog, setProjectDialog] = useState({ open: false, id: null as string | null, name: "", color: "#9c9387", area: "", ansvarlig: "", description: "", startMonth: todayIdx, endMonth: null as number | null });
   const [segmentDialog, setSegmentDialog] = useState({ open: false, projectId: null as string | null, id: null as string | null, label: "", start: todayIdx, end: todayIdx, description: "" });
   const [tooltip, setTooltip] = useState({ show: false, x: 0, y: 0, content: null as React.ReactNode | null });
   const [drag, setDrag] = useState(null as any);
@@ -309,7 +309,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
   });
 
   function openProjectEdit(prj: any) {
-    setProjectDialog({ open: true, id: prj.id, name: prj.name, color: prj.color, area: prj.area || "", ansvarlig: prj.ansvarlig || "", description: prj.description || "", startMonth: prj.startMonth ?? todayIdx, endMonth: prj.endMonth ?? todayIdx });
+    setProjectDialog({ open: true, id: prj.id, name: prj.name, color: prj.color, area: prj.area || "", ansvarlig: prj.ansvarlig || "", description: prj.description || "", startMonth: prj.startMonth ?? todayIdx, endMonth: prj.endMonth });
   }
 
   function saveProject() {
@@ -354,7 +354,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
   }
 
   function addProject() {
-    setProjectDialog({ open: true, id: null, name: "Nyt projekt", color: "#9c9387", area: "", ansvarlig: "", description: "", startMonth: todayIdx, endMonth: todayIdx });
+    setProjectDialog({ open: true, id: null, name: "Nyt projekt", color: "#9c9387", area: "", ansvarlig: "", description: "", startMonth: todayIdx, endMonth: null });
   }
 
   function openSegmentEdit(prjId: string, seg: any) {
@@ -653,12 +653,14 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
                   </div>
 
                   <div className="relative h-[44px]">
-                    {prj.startMonth != null && prj.endMonth != null && (
+                    {prj.startMonth != null && (
                       <div
                         className="absolute top-1/2 -translate-y-1/2 h-1 bg-gray-300 opacity-30 rounded-full pointer-events-none"
                         style={{
                           left: monthIdxToX(prj.startMonth) + 4,
-                          width: Math.max(0, ((prj.endMonth - prj.startMonth + 1) / 3) * CELL_W - 8),
+                          width: prj.endMonth != null 
+                            ? Math.max(0, ((prj.endMonth - prj.startMonth + 1) / 3) * CELL_W - 8)
+                            : Math.max(0, totalW + CELL_W - (monthIdxToX(prj.startMonth) + 4)),
                         }}
                       />
                     )}
@@ -802,20 +804,32 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
               />
             </Field>
             <Field label="Projekt slut måned">
-              <input
-                type="month"
-                value={(() => {
-                  const { y, m } = ymFromIndex(projectDialog.endMonth);
-                  const pad = String(m + 1).padStart(2, "0");
-                  return `${y}-${pad}`;
-                })()}
-                onChange={(e) => {
-                  const [y, mm] = e.target.value.split("-").map(Number);
-                  setProjectDialog(s => ({ ...s, endMonth: y * 12 + (mm - 1) }));
-                }}
-                className="w-full rounded-xl border px-3 py-2"
-                data-testid="input-project-end"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="month"
+                  value={projectDialog.endMonth != null ? (() => {
+                    const { y, m } = ymFromIndex(projectDialog.endMonth);
+                    const pad = String(m + 1).padStart(2, "0");
+                    return `${y}-${pad}`;
+                  })() : ""}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const [y, mm] = e.target.value.split("-").map(Number);
+                      setProjectDialog(s => ({ ...s, endMonth: y * 12 + (mm - 1) }));
+                    }
+                  }}
+                  className="flex-1 rounded-xl border px-3 py-2"
+                  data-testid="input-project-end"
+                />
+                <button
+                  onClick={() => setProjectDialog(s => ({ ...s, endMonth: null }))}
+                  className="px-3 py-2 rounded-xl border hover:bg-black/5 transition text-sm"
+                  title="Sæt som åben slutdato"
+                  data-testid="button-project-end-unknown"
+                >
+                  Åben
+                </button>
+              </div>
             </Field>
           </div>
         </div>
