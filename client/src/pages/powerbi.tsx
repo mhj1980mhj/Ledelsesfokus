@@ -1125,11 +1125,9 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                 >
                   <div className="flex flex-col h-full">
                     <div className="flex-grow mb-4">
-                      {dashboard.description && (
-                        <p className="text-sm text-gray-600 mb-3 line-clamp-2" data-testid="dashboard-description">
-                          {dashboard.description}
-                        </p>
-                      )}
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2 min-h-[2.5rem]" data-testid="dashboard-description">
+                        {dashboard.description}
+                      </p>
                       <div className="flex items-center justify-between text-xs text-gray-500 gap-2">
                         <span className="bg-primary-100 text-primary-700 px-2 py-1 rounded-full flex-shrink-0">
                           {dashboard.category}
