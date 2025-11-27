@@ -263,7 +263,8 @@ export default function PowerBI({ onLogout, pinnedLinks, setPinnedLinks }: Power
       name: dashboard.name,
       url: dashboard.url,
       description: dashboard.description || "",
-      category: dashboard.category
+      category: dashboard.category,
+      type: (dashboard.type as "power-bi" | "microsoft-lists" | "sharepoint-folder") || "power-bi"
     });
     setIsEditDialogOpen(true);
   };
@@ -408,14 +409,14 @@ export default function PowerBI({ onLogout, pinnedLinks, setPinnedLinks }: Power
 
         {/* Edit Dialog for full screen view */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="sm:max-w-[600px]" data-testid="edit-dialog">
-            <DialogHeader>
+          <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto" data-testid="edit-dialog">
+            <DialogHeader className="sticky top-0 bg-white z-10">
               <DialogTitle className="text-gray-900">
                 Rediger Ressource
               </DialogTitle>
             </DialogHeader>
             <Form {...editForm}>
-              <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-6">
+              <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-6 pr-4">
                 <FormField
                   control={editForm.control}
                   name="type"
@@ -430,6 +431,7 @@ export default function PowerBI({ onLogout, pinnedLinks, setPinnedLinks }: Power
                           <SelectContent>
                             <SelectItem value="power-bi">Power BI</SelectItem>
                             <SelectItem value="microsoft-lists">Microsoft Lists</SelectItem>
+                            <SelectItem value="sharepoint-folder">SharePoint Folder</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -851,14 +853,14 @@ export default function PowerBI({ onLogout, pinnedLinks, setPinnedLinks }: Power
 
           {/* Edit Dashboard Dialog */}
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-              <DialogContent className="sm:max-w-[600px]" data-testid="edit-dialog">
-                <DialogHeader>
+              <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto" data-testid="edit-dialog">
+                <DialogHeader className="sticky top-0 bg-white z-10">
                   <DialogTitle className="text-gray-900">
                     Rediger Ressource
                   </DialogTitle>
                 </DialogHeader>
                 <Form {...editForm}>
-                  <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-6">
+                  <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-6 pr-4">
                     <FormField
                       control={editForm.control}
                       name="type"
@@ -873,6 +875,7 @@ export default function PowerBI({ onLogout, pinnedLinks, setPinnedLinks }: Power
                               <SelectContent>
                                 <SelectItem value="power-bi">Power BI</SelectItem>
                                 <SelectItem value="microsoft-lists">Microsoft Lists</SelectItem>
+                                <SelectItem value="sharepoint-folder">SharePoint Folder</SelectItem>
                               </SelectContent>
                             </Select>
                           </FormControl>
