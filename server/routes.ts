@@ -29,14 +29,33 @@ router.post("/api/areas", async (req: Request, res: Response) => {
   }
 });
 
+router.put("/api/areas/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const validation = insertAreaSchema.partial().safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Invalid area data", details: validation.error });
+    }
+    
+    const area = await storage.updateArea(id, validation.data);
+    if (!area) {
+      return res.status(404).json({ error: "Area not found" });
+    }
+    res.json(area);
+  } catch (error) {
+    console.error("Error updating area:", error);
+    res.status(500).json({ error: "Failed to update area" });
+  }
+});
+
 router.delete("/api/areas/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const success = await storage.deleteArea(id);
-    if (!success) {
+    const result = await storage.deleteArea(id);
+    if (!result.success) {
       return res.status(404).json({ error: "Area not found" });
     }
-    res.json({ success: true });
+    res.json({ success: true, deletedProjectCount: result.deletedProjectCount });
   } catch (error) {
     console.error("Error deleting area:", error);
     res.status(500).json({ error: "Failed to delete area" });

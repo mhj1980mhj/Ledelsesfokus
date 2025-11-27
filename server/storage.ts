@@ -13,7 +13,8 @@ export interface IStorage {
   getAllAreas(): Promise<Area[]>;
   getArea(id: string): Promise<Area | null>;
   createArea(area: InsertArea): Promise<Area>;
-  deleteArea(id: string): Promise<boolean>;
+  updateArea(id: string, area: Partial<InsertArea>): Promise<Area | null>;
+  deleteArea(id: string): Promise<{ success: boolean; deletedProjectCount: number }>;
   
   // Power BI Dashboards
   getAllDashboards(): Promise<PowerBIDashboard[]>;
@@ -108,9 +109,31 @@ export class DatabaseStorage implements IStorage {
     return newArea;
   }
 
-  async deleteArea(id: string): Promise<boolean> {
+  async updateArea(id: string, area: Partial<InsertArea>): Promise<Area | null> {
+    const [updatedArea] = await db
+      .update(areas)
+      .set(area)
+      .where(eq(areas.id, id))
+      .returning();
+    return updatedArea || null;
+  }
+
+  async deleteArea(id: string): Promise<{ success: boolean; deletedProjectCount: number }> {
+    const area = await this.getArea(id);
+    if (!area) {
+      return { success: false, deletedProjectCount: 0 };
+    }
+
+    const areaProjects = await db.select().from(projects).where(eq(projects.area, area.name));
+    const deletedProjectCount = areaProjects.length;
+
+    for (const project of areaProjects) {
+      await db.delete(segments).where(eq(segments.projectId, project.id));
+      await db.delete(projects).where(eq(projects.id, project.id));
+    }
+
     const result = await db.delete(areas).where(eq(areas.id, id));
-    return (result.rowCount ?? 0) > 0;
+    return { success: (result.rowCount ?? 0) > 0, deletedProjectCount };
   }
 
   async getAllDashboards(): Promise<PowerBIDashboard[]> {

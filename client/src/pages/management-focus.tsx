@@ -2,8 +2,8 @@ import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Search, Settings, Plus, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Search, Settings, Plus, X, Pencil, Trash2 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import Navigation from "@/components/navigation";
@@ -31,6 +31,17 @@ export default function ManagementFocus({ onLogout, pinnedLinks, setPinnedLinks 
   const [isAreasDialogOpen, setIsAreasDialogOpen] = useState(false);
   const [newAreaName, setNewAreaName] = useState("");
   const [newAreaColor, setNewAreaColor] = useState("#9c9387");
+  
+  const [deleteConfirmDialog, setDeleteConfirmDialog] = useState<{ open: boolean; areaId: string; areaName: string; projectCount: number }>({ 
+    open: false, areaId: "", areaName: "", projectCount: 0 
+  });
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  
+  const [editDialog, setEditDialog] = useState<{ open: boolean; areaId: string; name: string; color: string }>({ 
+    open: false, areaId: "", name: "", color: "#9c9387" 
+  });
+  const [editConfirmDialog, setEditConfirmDialog] = useState(false);
+  
   const { toast } = useToast();
 
   const { data: projects = [] } = useQuery<any[]>({
@@ -63,16 +74,42 @@ export default function ManagementFocus({ onLogout, pinnedLinks, setPinnedLinks 
     },
   });
 
+  const updateAreaMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: { name?: string; color?: string } }) => {
+      const response = await fetch(`/api/areas/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("Failed to update area");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/areas"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      setEditDialog({ open: false, areaId: "", name: "", color: "#9c9387" });
+      toast({ description: "Område opdateret" });
+    },
+    onError: () => {
+      toast({ description: "Kunne ikke opdatere område", variant: "destructive" });
+    },
+  });
+
   const deleteAreaMutation = useMutation({
     mutationFn: async (id: string) => {
       const response = await fetch(`/api/areas/${id}`, { method: "DELETE" });
       if (!response.ok) throw new Error("Failed to delete area");
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/areas"] });
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
-      toast({ description: "Område slettet" });
+      setDeleteConfirmDialog({ open: false, areaId: "", areaName: "", projectCount: 0 });
+      setDeleteConfirmText("");
+      const projectMsg = data.deletedProjectCount > 0 
+        ? ` og ${data.deletedProjectCount} projekt${data.deletedProjectCount > 1 ? 'er' : ''}` 
+        : '';
+      toast({ description: `Område${projectMsg} slettet` });
     },
     onError: () => {
       toast({ description: "Kunne ikke slette område", variant: "destructive" });
@@ -89,6 +126,33 @@ export default function ManagementFocus({ onLogout, pinnedLinks, setPinnedLinks 
   const handleAddArea = () => {
     if (!newAreaName.trim()) return;
     createAreaMutation.mutate({ name: newAreaName, color: newAreaColor });
+  };
+
+  const openDeleteConfirm = (area: any) => {
+    const projectCount = projects.filter(p => p.area === area.name).length;
+    setDeleteConfirmDialog({ open: true, areaId: area.id, areaName: area.name, projectCount });
+    setDeleteConfirmText("");
+  };
+
+  const handleDeleteArea = () => {
+    if (deleteConfirmText.toLowerCase() !== "slet") return;
+    deleteAreaMutation.mutate(deleteConfirmDialog.areaId);
+  };
+
+  const openEditDialog = (area: any) => {
+    setEditDialog({ open: true, areaId: area.id, name: area.name, color: area.color });
+  };
+
+  const handleEditArea = () => {
+    setEditConfirmDialog(true);
+  };
+
+  const confirmEditArea = () => {
+    updateAreaMutation.mutate({ 
+      id: editDialog.areaId, 
+      data: { name: editDialog.name, color: editDialog.color } 
+    });
+    setEditConfirmDialog(false);
   };
 
   return (
@@ -138,25 +202,45 @@ export default function ManagementFocus({ onLogout, pinnedLinks, setPinnedLinks 
                 <DialogContent className="sm:max-w-[400px]">
                   <DialogHeader>
                     <DialogTitle>Administrer områder</DialogTitle>
+                    <DialogDescription>
+                      Opret, rediger eller slet områder til dine projekter.
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      {areas.map(area => (
-                        <div key={area.id} className="flex items-center justify-between p-2 bg-gray-100 rounded">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded" style={{ backgroundColor: area.color }} />
-                            <span className="text-sm font-medium">{area.name}</span>
+                      {areas.map(area => {
+                        const areaProjectCount = projects.filter(p => p.area === area.name).length;
+                        return (
+                          <div key={area.id} className="flex items-center justify-between p-2 bg-gray-100 rounded">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded" style={{ backgroundColor: area.color }} />
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium">{area.name}</span>
+                                <span className="text-xs text-gray-500">{areaProjectCount} projekt{areaProjectCount !== 1 ? 'er' : ''}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEditDialog(area)}
+                                data-testid={`button-edit-area-${area.id}`}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openDeleteConfirm(area)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                data-testid={`button-delete-area-${area.id}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteAreaMutation.mutate(area.id)}
-                            data-testid={`button-delete-area-${area.id}`}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                     <div className="border-t pt-4 space-y-2">
                       <Input
@@ -210,6 +294,138 @@ export default function ManagementFocus({ onLogout, pinnedLinks, setPinnedLinks 
           <ProjectTimeline searchQuery={searchQuery} areaFilter={areaFilter} ansvarligFilter={ansvarligFilter} />
         </div>
       </main>
+
+      <Dialog open={deleteConfirmDialog.open} onOpenChange={(open) => {
+        if (!open) {
+          setDeleteConfirmDialog({ open: false, areaId: "", areaName: "", projectCount: 0 });
+          setDeleteConfirmText("");
+        }
+      }}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Slet område</DialogTitle>
+            <DialogDescription className="space-y-3">
+              <span className="block">
+                Er du sikker på, at du vil slette området "{deleteConfirmDialog.areaName}"?
+              </span>
+              {deleteConfirmDialog.projectCount > 0 && (
+                <span className="block text-red-600 font-medium">
+                  Dette vil også slette {deleteConfirmDialog.projectCount} projekt{deleteConfirmDialog.projectCount > 1 ? 'er' : ''} og alle deres segmenter!
+                </span>
+              )}
+              <span className="block">
+                Skriv <span className="font-bold">"slet"</span> for at bekræfte.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <Input
+              placeholder='Skriv "slet" for at bekræfte'
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              data-testid="input-delete-confirm"
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setDeleteConfirmDialog({ open: false, areaId: "", areaName: "", projectCount: 0 });
+                  setDeleteConfirmText("");
+                }}
+                data-testid="button-cancel-delete"
+              >
+                Annuller
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteArea}
+                disabled={deleteConfirmText.toLowerCase() !== "slet" || deleteAreaMutation.isPending}
+                data-testid="button-confirm-delete"
+              >
+                {deleteAreaMutation.isPending ? "Sletter..." : "Slet område"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editDialog.open} onOpenChange={(open) => {
+        if (!open) {
+          setEditDialog({ open: false, areaId: "", name: "", color: "#9c9387" });
+        }
+      }}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Rediger område</DialogTitle>
+            <DialogDescription>
+              Rediger navn og farve på området.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <Input
+              placeholder="Områdenavn"
+              value={editDialog.name}
+              onChange={(e) => setEditDialog({ ...editDialog, name: e.target.value })}
+              data-testid="input-edit-area-name"
+            />
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-600">Farve:</span>
+              <input
+                type="color"
+                value={editDialog.color}
+                onChange={(e) => setEditDialog({ ...editDialog, color: e.target.value })}
+                className="w-10 h-10 rounded cursor-pointer"
+                data-testid="input-edit-area-color"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setEditDialog({ open: false, areaId: "", name: "", color: "#9c9387" })}
+                data-testid="button-cancel-edit"
+              >
+                Annuller
+              </Button>
+              <Button
+                onClick={handleEditArea}
+                disabled={!editDialog.name.trim() || updateAreaMutation.isPending}
+                className="bg-[#9c9387] hover:bg-[#8a816d] text-white"
+                data-testid="button-save-edit"
+              >
+                Gem ændringer
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editConfirmDialog} onOpenChange={setEditConfirmDialog}>
+        <DialogContent className="sm:max-w-[350px]">
+          <DialogHeader>
+            <DialogTitle>Bekræft ændringer</DialogTitle>
+            <DialogDescription>
+              Er du sikker på, at du vil gemme ændringerne?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setEditConfirmDialog(false)}
+              data-testid="button-cancel-confirm-edit"
+            >
+              Nej
+            </Button>
+            <Button
+              onClick={confirmEditArea}
+              disabled={updateAreaMutation.isPending}
+              className="bg-[#9c9387] hover:bg-[#8a816d] text-white"
+              data-testid="button-confirm-edit"
+            >
+              {updateAreaMutation.isPending ? "Gemmer..." : "Ja, gem"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
