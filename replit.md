@@ -22,11 +22,6 @@ The application uses a consistent PageHeader component across all pages and a sh
 - **Two-tier authentication system implemented:**
   - Regular user (AL2bolig/AL2bedst): View-only access to Data page
   - Admin user (admin/AL2bedst): Full CRUD access (create, edit, delete resources)
-- **SharePoint integration added:**
-  - Connected via Microsoft Graph API through Replit connector
-  - Browse SharePoint sites, document libraries, and lists
-  - Navigate folder structures and open files directly
-  - API endpoints: `/api/sharepoint/sites`, `/api/sharepoint/sites/:siteId/drives`, etc.
 
 # User Preferences
 
