@@ -39,9 +39,10 @@ const formSchema = insertPowerBIDashboardSchema.extend({
 
 interface PowerBIProps {
   onLogout: () => void;
+  isAdmin?: boolean;
 }
 
-export default function PowerBI({ onLogout }: PowerBIProps) {
+export default function PowerBI({ onLogout, isAdmin = false }: PowerBIProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -651,6 +652,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                 {showArchived ? "Arkiverede" : "Aktive"}
               </Button>
 
+              {isAdmin && (
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
                   <Button 
@@ -843,10 +845,12 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                 </Form>
               </DialogContent>
             </Dialog>
+            )}
             </div>
           </div>
 
-          {/* Edit Dashboard Dialog */}
+          {/* Edit Dashboard Dialog - Admin only */}
+            {isAdmin && (
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
               <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto" data-testid="edit-dialog">
                 <DialogHeader className="sticky top-0 bg-white z-10">
@@ -1042,6 +1046,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                 </Form>
               </DialogContent>
             </Dialog>
+            )}
 
             <AlertDialog open={confirmAction.type === "archive" || confirmAction.type === "delete" || confirmAction.type === "permanent-delete"} onOpenChange={() => setConfirmAction({ type: null })}>
               <AlertDialogContent>
@@ -1120,14 +1125,16 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
             <p className="text-gray-600 mb-4">
               Tilføj din første ressource for at komme i gang.
             </p>
-            <Button 
-              onClick={() => setIsAddDialogOpen(true)}
-              className="bg-[#9c9387] hover:bg-[#8a816d] text-white"
-              data-testid="button-add-first"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Tilføj Ressource
-            </Button>
+            {isAdmin && (
+              <Button 
+                onClick={() => setIsAddDialogOpen(true)}
+                className="bg-[#9c9387] hover:bg-[#8a816d] text-white"
+                data-testid="button-add-first"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Tilføj Ressource
+              </Button>
+            )}
           </div>
         ) : (
           <div className="space-y-6" data-testid="dashboard-grid">
@@ -1146,7 +1153,7 @@ export default function PowerBI({ onLogout }: PowerBIProps) {
                   key={dashboard.id}
                   title={truncateTitle(dashboard.name)}
                   showExpand
-                  showSettings
+                  showSettings={isAdmin}
                   dashboardUrl={dashboard.url || undefined}
                   type={dashboard.type as "power-bi" | "microsoft-lists" | "sharepoint-folder"}
                   onExpand={() => dashboard.type === "power-bi" ? setViewingDashboard(dashboard) : window.open(dashboard.url, '_blank')}
