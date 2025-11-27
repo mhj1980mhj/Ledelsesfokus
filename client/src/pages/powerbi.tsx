@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Settings, Plus, Calendar, ArrowUpDown, Clock, ExternalLink, Trash2, ArrowLeft, ChevronDown, Check, Archive, ArchiveRestore, Pin } from "lucide-react";
+import { Search, Settings, Plus, Calendar, ArrowUpDown, Clock, ExternalLink, Trash2, ArrowLeft, ChevronDown, Check, Archive, ArchiveRestore } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -17,7 +17,6 @@ import { z } from "zod";
 import Navigation from "@/components/navigation";
 import PageHeader from "@/components/page-header";
 import DashboardCard from "@/components/dashboard-card";
-import PinnedSidebar from "@/components/pinned-sidebar";
 import { useToast } from "@/hooks/use-toast";
 
 type PowerBIDashboard = {
@@ -38,20 +37,11 @@ const formSchema = insertPowerBIDashboardSchema.extend({
   type: z.enum(["power-bi", "microsoft-lists", "sharepoint-folder"]).default("power-bi"),
 });
 
-type PinnedLink = {
-  id: string;
-  name: string;
-  url: string;
-  type: "power-bi" | "microsoft-lists" | "sharepoint-folder";
-};
-
 interface PowerBIProps {
   onLogout: () => void;
-  pinnedLinks: PinnedLink[];
-  setPinnedLinks: (links: PinnedLink[]) => void;
 }
 
-export default function PowerBI({ onLogout, pinnedLinks, setPinnedLinks }: PowerBIProps) {
+export default function PowerBI({ onLogout }: PowerBIProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -65,26 +55,6 @@ export default function PowerBI({ onLogout, pinnedLinks, setPinnedLinks }: Power
   const [confirmAction, setConfirmAction] = useState<{ type: "archive" | "delete" | null, dashboardId?: string }>({ type: null });
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  const togglePinLink = (dashboard: PowerBIDashboard) => {
-    const isPinned = pinnedLinks.some(link => link.id === dashboard.id);
-    if (isPinned) {
-      setPinnedLinks(pinnedLinks.filter(link => link.id !== dashboard.id));
-      toast({
-        description: "Link fjernet fra fastgjort"
-      });
-    } else {
-      setPinnedLinks([...pinnedLinks, {
-        id: dashboard.id,
-        name: dashboard.name,
-        url: dashboard.url,
-        type: (dashboard.type as "power-bi" | "microsoft-lists" | "sharepoint-folder") || "power-bi"
-      }]);
-      toast({
-        description: "Link fastgjort til sidebar"
-      });
-    }
-  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -666,12 +636,12 @@ export default function PowerBI({ onLogout, pinnedLinks, setPinnedLinks }: Power
                     <Plus className="h-5 w-5" />
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]" data-testid="dialog-add-dashboard">
-                <DialogHeader>
+                <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto" data-testid="dialog-add-dashboard">
+                <DialogHeader className="sticky top-0 bg-white z-10">
                   <DialogTitle>Tilføj ny Ressource</DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pr-4">
                     <FormField
                       control={form.control}
                       name="type"
@@ -1152,8 +1122,6 @@ export default function PowerBI({ onLogout, pinnedLinks, setPinnedLinks }: Power
                   onExpand={() => dashboard.type === "power-bi" ? setViewingDashboard(dashboard) : window.open(dashboard.url, '_blank')}
                   onSettings={() => handleEditDashboard(dashboard)}
                   data-testid={`card-dashboard-${dashboard.id}`}
-                  onPin={() => togglePinLink(dashboard)}
-                  isPinned={pinnedLinks.some(link => link.id === dashboard.id)}
                 >
                   <div className="flex flex-col h-full">
                     <div className="flex-grow mb-4">

@@ -11,20 +11,11 @@ import PageHeader from "@/components/page-header";
 import ProjectTimeline from "@/components/project-timeline";
 import { useToast } from "@/hooks/use-toast";
 
-type PinnedLink = {
-  id: string;
-  name: string;
-  url: string;
-  type: "power-bi" | "microsoft-lists" | "sharepoint-folder";
-};
-
 interface ManagementFocusProps {
   onLogout: () => void;
-  pinnedLinks: PinnedLink[];
-  setPinnedLinks: (links: PinnedLink[]) => void;
 }
 
-export default function ManagementFocus({ onLogout, pinnedLinks, setPinnedLinks }: ManagementFocusProps) {
+export default function ManagementFocus({ onLogout }: ManagementFocusProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [areaFilter, setAreaFilter] = useState("all");
   const [ansvarligFilter, setAnsvarligFilter] = useState("all");
