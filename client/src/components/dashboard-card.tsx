@@ -35,20 +35,20 @@ export default function DashboardCard({
   };
 
   const typeIcon = type === "microsoft-lists" ? 
-    <List className="h-7 w-7 text-[#107C10]" data-testid="icon-microsoft-lists" /> :
+    <List className="h-5 w-5 text-[#107C10] flex-shrink-0" data-testid="icon-microsoft-lists" /> :
     type === "sharepoint-folder" ?
-    <Folder className="h-7 w-7 text-[#ED7D31]" data-testid="icon-sharepoint-folder" /> :
-    <BarChart3 className="h-7 w-7 text-[#0078D4]" data-testid="icon-power-bi" />;
+    <Folder className="h-5 w-5 text-[#ED7D31] flex-shrink-0" data-testid="icon-sharepoint-folder" /> :
+    <BarChart3 className="h-5 w-5 text-[#0078D4] flex-shrink-0" data-testid="icon-power-bi" />;
 
   return (
     <div 
-      className="dashboard-card bg-white/70 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 shadow-lg"
+      className="dashboard-card bg-white/70 backdrop-blur-xl rounded-xl p-4 border border-gray-200/50 shadow-lg"
       data-testid={testId}
     >
-      <div className="flex items-center justify-between mb-4" data-testid="card-header">
+      <div className="flex items-center justify-between mb-3" data-testid="card-header">
         <div className="flex items-center gap-2 min-w-0">
           {typeIcon}
-          <h3 className="text-xl font-semibold text-gray-800 line-clamp-1" data-testid="card-title" title={title}>
+          <h3 className="text-base font-semibold text-gray-800 line-clamp-1" data-testid="card-title" title={title}>
             {title}
           </h3>
         </div>
