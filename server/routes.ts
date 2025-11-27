@@ -1,6 +1,7 @@
 import { Request, Response, Router } from "express";
 import { insertAreaSchema, insertPowerBIDashboardSchema, insertProjectSchema, insertSegmentSchema } from "@shared/schema";
 import { storage } from "./storage";
+import { getSharePointSites, getSharePointSite, getSiteDrives, getDriveItems, getSiteLists, getListItems } from "./sharepoint";
 
 const router = Router();
 
@@ -354,6 +355,73 @@ router.delete("/api/segments/:id", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error deleting segment:", error);
     res.status(500).json({ error: "Failed to delete segment" });
+  }
+});
+
+// SharePoint Routes
+router.get("/api/sharepoint/sites", async (req: Request, res: Response) => {
+  try {
+    const sites = await getSharePointSites();
+    res.json(sites);
+  } catch (error: any) {
+    console.error("Error fetching SharePoint sites:", error);
+    res.status(500).json({ error: error.message || "Failed to fetch SharePoint sites" });
+  }
+});
+
+router.get("/api/sharepoint/sites/:siteId", async (req: Request, res: Response) => {
+  try {
+    const { siteId } = req.params;
+    const site = await getSharePointSite(siteId);
+    res.json(site);
+  } catch (error: any) {
+    console.error("Error fetching SharePoint site:", error);
+    res.status(500).json({ error: error.message || "Failed to fetch SharePoint site" });
+  }
+});
+
+router.get("/api/sharepoint/sites/:siteId/drives", async (req: Request, res: Response) => {
+  try {
+    const { siteId } = req.params;
+    const drives = await getSiteDrives(siteId);
+    res.json(drives);
+  } catch (error: any) {
+    console.error("Error fetching site drives:", error);
+    res.status(500).json({ error: error.message || "Failed to fetch site drives" });
+  }
+});
+
+router.get("/api/sharepoint/sites/:siteId/drives/:driveId/items", async (req: Request, res: Response) => {
+  try {
+    const { siteId, driveId } = req.params;
+    const { folderId } = req.query;
+    const items = await getDriveItems(siteId, driveId, folderId as string | undefined);
+    res.json(items);
+  } catch (error: any) {
+    console.error("Error fetching drive items:", error);
+    res.status(500).json({ error: error.message || "Failed to fetch drive items" });
+  }
+});
+
+router.get("/api/sharepoint/sites/:siteId/lists", async (req: Request, res: Response) => {
+  try {
+    const { siteId } = req.params;
+    const lists = await getSiteLists(siteId);
+    res.json(lists);
+  } catch (error: any) {
+    console.error("Error fetching site lists:", error);
+    res.status(500).json({ error: error.message || "Failed to fetch site lists" });
+  }
+});
+
+router.get("/api/sharepoint/sites/:siteId/lists/:listId/items", async (req: Request, res: Response) => {
+  try {
+    const { siteId, listId } = req.params;
+    const items = await getListItems(siteId, listId);
+    res.json(items);
+  } catch (error: any) {
+    console.error("Error fetching list items:", error);
+    res.status(500).json({ error: error.message || "Failed to fetch list items" });
   }
 });
 
