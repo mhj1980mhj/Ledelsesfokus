@@ -32,6 +32,7 @@ export const projects = pgTable("projects", {
   color: text("color").notNull().default("#9c9387"),
   area: text("area"),
   ansvarlig: varchar("ansvarlig", { length: 3 }).notNull(),
+  description: text("description"),
   position: integer("position").notNull().default(0),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });

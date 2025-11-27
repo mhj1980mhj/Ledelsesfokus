@@ -129,7 +129,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
     queryKey: ["/api/areas"],
   });
 
-  const [projectDialog, setProjectDialog] = useState({ open: false, id: null as string | null, name: "", color: "#9c9387", area: "", ansvarlig: "" });
+  const [projectDialog, setProjectDialog] = useState({ open: false, id: null as string | null, name: "", color: "#9c9387", area: "", ansvarlig: "", description: "" });
   const [segmentDialog, setSegmentDialog] = useState({ open: false, projectId: null as string | null, id: null as string | null, label: "", start: todayIdx, end: todayIdx, description: "" });
   const [tooltip, setTooltip] = useState({ show: false, x: 0, y: 0, content: null as React.ReactNode | null });
   const [drag, setDrag] = useState(null as any);
@@ -309,7 +309,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
   });
 
   function openProjectEdit(prj: any) {
-    setProjectDialog({ open: true, id: prj.id, name: prj.name, color: prj.color, area: prj.area || "", ansvarlig: prj.ansvarlig || "" });
+    setProjectDialog({ open: true, id: prj.id, name: prj.name, color: prj.color, area: prj.area || "", ansvarlig: prj.ansvarlig || "", description: prj.description || "" });
   }
 
   function saveProject() {
@@ -335,6 +335,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
       color: areaColor,
       area: projectDialog.area,
       ansvarlig: projectDialog.ansvarlig,
+      description: projectDialog.description || null,
     };
 
     if (projectDialog.id) {
@@ -351,7 +352,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
   }
 
   function addProject() {
-    setProjectDialog({ open: true, id: null, name: "Nyt projekt", color: "#9c9387", area: "", ansvarlig: "" });
+    setProjectDialog({ open: true, id: null, name: "Nyt projekt", color: "#9c9387", area: "", ansvarlig: "", description: "" });
   }
 
   function openSegmentEdit(prjId: string, seg: any) {
@@ -615,7 +616,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
             {filteredProjects.map((prj: any) => (
               <div key={prj.id} className="contents group">
                 <div className="relative border-t bg-white px-4 py-2">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3" onMouseEnter={(e) => prj.description && setTooltip({ show: true, x: e.clientX + 14, y: e.clientY + 14, content: <div className="max-w-[360px]"><div className="font-medium mb-2">{prj.name}</div><div className="text-sm leading-relaxed whitespace-pre-wrap">{prj.description}</div></div> })} onMouseLeave={hideTooltip} onMouseMove={moveTooltip}>
                     <span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: prj.color }} />
                     <button
                       className="truncate rounded-lg px-2 py-1 text-left text-sm hover:bg-black/5"
@@ -764,6 +765,14 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
               />
             </Field>
           </div>
+          <Field label="Beskrivelse">
+            <textarea 
+              value={projectDialog.description} 
+              onChange={(e) => setProjectDialog({ ...projectDialog, description: e.target.value })} 
+              className="min-h-[120px] w-full resize-y rounded-xl border px-3 py-2 leading-relaxed" 
+              data-testid="textarea-project-description"
+            />
+          </Field>
         </div>
         <div className="flex items-center justify-between gap-3 border-t px-5 py-3">
           {projectDialog.id && (
