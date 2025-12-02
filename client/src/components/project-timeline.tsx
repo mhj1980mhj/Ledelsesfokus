@@ -76,9 +76,9 @@ function hasOverlap(segments: any[], segId: string, start: number, end: number) 
 function Modal({ open, onClose, children }: { open: boolean; onClose: () => void; children: React.ReactNode }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative max-h-[80vh] w-[min(720px,92vw)] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
+      <div className="relative max-h-[90vh] w-[min(720px,100%)] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 flex flex-col">
         {children}
       </div>
     </div>
@@ -750,7 +750,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
 
       <Modal open={projectDialog.open} onClose={() => setProjectDialog(p => ({ ...p, open: false }))}>
         <ModalHeader title={projectDialog.id ? "Rediger projekt" : "Nyt projekt"} onClose={() => setProjectDialog(p => ({ ...p, open: false }))} />
-        <div className="flex max-h-[70vh] flex-col gap-4 overflow-auto p-5">
+        <div className="flex flex-1 flex-col gap-4 overflow-auto p-5 min-h-0">
           <Field label="Navn">
             <input 
               value={projectDialog.name} 
