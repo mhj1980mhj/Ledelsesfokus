@@ -204,6 +204,9 @@ export class DatabaseStorage implements IStorage {
         color: project.color || "#9c9387",
         area: project.area || null,
         ansvarlig: project.ansvarlig,
+        description: project.description || null,
+        startMonth: project.startMonth,
+        endMonth: project.endMonth,
         position: nextPosition,
       })
       .returning();

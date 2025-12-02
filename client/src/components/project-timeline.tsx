@@ -663,7 +663,7 @@ export default function ProjectTimeline({ searchQuery = "", areaFilter = "all", 
                   <div className="relative h-[44px]">
                     {prj.startMonth != null && (
                       <div
-                        className="absolute top-1/2 -translate-y-1/2 h-1 bg-gray-300 opacity-30 rounded-full pointer-events-none"
+                        className="absolute top-1/2 -translate-y-1/2 h-1 bg-gray-400 opacity-50 rounded-full pointer-events-none"
                         style={{
                           left: monthIdxToX(prj.startMonth) + 4,
                           width: prj.endMonth != null 
