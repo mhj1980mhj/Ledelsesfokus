@@ -4,30 +4,30 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()::text`),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
 });
 
 export const areas = pgTable("areas", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()::text`),
   name: text("name").notNull().unique(),
   color: text("color").notNull(),
 });
 
 export const powerBIDashboards = pgTable("power_bi_dashboards", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()::text`),
   name: text("name").notNull(),
   url: text("url").notNull(),
   description: text("description"),
   category: text("category").notNull().default("General"),
   type: text("type").notNull().default("power-bi"),
-  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP::text`),
   isActive: integer("is_active").notNull().default(1),
 });
 
 export const projects = pgTable("projects", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()::text`),
   name: text("name").notNull(),
   color: text("color").notNull().default("#9c9387"),
   area: text("area"),
@@ -36,11 +36,11 @@ export const projects = pgTable("projects", {
   startMonth: integer("start_month"),
   endMonth: integer("end_month"),
   position: integer("position").notNull().default(0),
-  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP::text`),
 });
 
 export const segments = pgTable("segments", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()::text`),
   projectId: varchar("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
   label: text("label").notNull(),
   startMonth: integer("start_month").notNull(),

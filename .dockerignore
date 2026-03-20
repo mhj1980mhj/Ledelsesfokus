@@ -1,0 +1,11 @@
+.git
+.agents
+.local
+.replit
+node_modules
+dist
+data
+.env
+.env.*
+!.env.localhost
+!.env.localhost.example
