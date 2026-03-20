@@ -1,12 +1,17 @@
 import { Link, useLocation } from "wouter";
-import { BarChart3, Focus } from "lucide-react";
+import { BarChart3, Focus, Shield } from "lucide-react";
 
-export default function Navigation() {
+interface NavigationProps {
+  isAdmin?: boolean;
+}
+
+export default function Navigation({ isAdmin = false }: NavigationProps) {
   const [location] = useLocation();
 
   const navItems = [
     { path: "/", label: "Data", icon: BarChart3 },
     { path: "/ledelsesfokus", label: "Ledelsesfokus", icon: Focus },
+    ...(isAdmin ? [{ path: "/admin", label: "Admin", icon: Shield }] : []),
   ];
 
   return (

@@ -4,6 +4,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import AdminPage from "@/pages/admin";
 import ManagementFocus from "@/pages/management-focus";
 import PowerBI from "@/pages/powerbi";
 import Login from "@/pages/login";
@@ -22,7 +23,8 @@ function Router({ isAuthenticated, isAdmin, onLogin, onLogout }: {
   return (
     <Switch>
       <Route path="/" component={() => <PowerBI onLogout={onLogout} isAdmin={isAdmin} />} />
-      <Route path="/ledelsesfokus" component={() => <ManagementFocus onLogout={onLogout} />} />
+      <Route path="/ledelsesfokus" component={() => <ManagementFocus onLogout={onLogout} isAdmin={isAdmin} />} />
+      <Route path="/admin" component={() => (isAdmin ? <AdminPage onLogout={onLogout} /> : <NotFound />)} />
       <Route component={NotFound} />
     </Switch>
   );

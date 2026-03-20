@@ -585,7 +585,7 @@ export default function PowerBI({ onLogout, isAdmin = false }: PowerBIProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-stone-50 to-neutral-100">
       <PageHeader title="Ledelsesoverblik" subtitle="Data" onLogout={onLogout} />
-      <Navigation />
+      <Navigation isAdmin={isAdmin} />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-8 py-8">
